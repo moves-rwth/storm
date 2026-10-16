@@ -69,7 +69,7 @@ class SynthesisApiTest : public ::testing::Test {
 
 TEST_F(SynthesisApiTest, VerificationEnginesAndOverloads) {
     build();
-    auto bound = storm::utility::one<Region::CoefficientType>() / 5;
+    Region::CoefficientType const bound = storm::utility::one<Region::CoefficientType>() / 5;
     for (auto engine : {Engine::ParameterLifting, Engine::ExactParameterLifting, Engine::ValidatingParameterLifting, Engine::RobustParameterLifting}) {
         SCOPED_TRACE(static_cast<int>(engine));
         auto property = formula("P<=0.9 [F \"target\"]");
@@ -103,7 +103,7 @@ TEST_F(SynthesisApiTest, FeasibilityMethodsAndOverloads) {
     if (enableScp()) {
         methods.push_back(Method::SCP);
     }
-    auto bound = storm::utility::one<Region::CoefficientType>() / 5;
+    Region::CoefficientType const bound = storm::utility::one<Region::CoefficientType>() / 5;
     auto box = region("0.2<=p<=0.8,0.2<=r<=0.8");
     auto property = formula("P>=0.6 [F \"target\"]");
     for (auto method : methods) {
@@ -126,7 +126,7 @@ TEST_F(SynthesisApiTest, FeasibilityMethodsAndOverloads) {
 
 TEST_F(SynthesisApiTest, SingletonRegions) {
     build();
-    auto half = storm::utility::one<Region::CoefficientType>() / 2;
+    Region::CoefficientType const half = storm::utility::one<Region::CoefficientType>() / 2;
     EXPECT_TRUE(storm::api::verify(environment, model, formula("P>=0.5 [F \"target\"]"), half));
     for (auto method : {Method::PLA, Method::GD}) {
         auto result = storm::api::checkFeasibility(environment, model, formula("P>=0.5 [F \"target\"]"), half, method);
