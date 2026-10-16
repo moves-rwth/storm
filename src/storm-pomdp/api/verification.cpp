@@ -95,28 +95,29 @@ storage::BeliefExplorationBounds<PomdpValueType> computeBeliefBounds(storm::Envi
     return bounds;
 }
 
-template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> unfoldPrepared(storm::Environment const& env,
-                                                                          BeliefVerificationInput<PomdpValueType> const& prepared,
-                                                                          beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options) {
+template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
+beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> unfoldPrepared(
+    storm::Environment const& env, BeliefVerificationInput<PomdpValueType> const& prepared,
+    beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options) {
     auto bounds = computeBeliefBounds(env, prepared, options.useClipping);
-    beliefs::BeliefBasedModelChecker<storm::models::sparse::Pomdp<PomdpValueType>, BeliefValueType, BeliefMdpValueType> checker(*prepared.pomdp);
+    beliefs::BeliefBasedModelChecker<storm::models::sparse::Pomdp<PomdpValueType>, BeliefValueType, BeliefMdpValueType, PolicyValueType> checker(
+        *prepared.pomdp);
     return checker.checkUnfold(env, prepared.propertyInformation, options, bounds);
 }
 
 }  // namespace
 
-template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfolding(
+template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
+beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> verifyWithBeliefUnfolding(
     storm::Environment const& env, storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula,
     beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options) {
     auto effectiveOptions = options;
     auto prepared = prepareBeliefVerification(pomdp, formula, effectiveOptions);
-    return unfoldPrepared<PomdpValueType, BeliefValueType, BeliefMdpValueType>(env, prepared, effectiveOptions);
+    return unfoldPrepared<PomdpValueType, BeliefValueType, BeliefMdpValueType, PolicyValueType>(env, prepared, effectiveOptions);
 }
 
-template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefDiscretization(
+template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
+beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> verifyWithBeliefDiscretization(
     storm::Environment const& env, storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula, uint64_t resolution,
     bool useDynamic, beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options) {
     STORM_LOG_THROW(resolution > 0, storm::exceptions::IllegalArgumentException, "The discretization resolution must be positive.");
@@ -126,7 +127,8 @@ beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefDiscr
     auto effectiveOptions = options;
     auto prepared = prepareBeliefVerification(pomdp, formula, effectiveOptions);
     auto bounds = computeBeliefBounds(env, prepared, false);
-    beliefs::BeliefBasedModelChecker<storm::models::sparse::Pomdp<PomdpValueType>, BeliefValueType, BeliefMdpValueType> checker(*prepared.pomdp);
+    beliefs::BeliefBasedModelChecker<storm::models::sparse::Pomdp<PomdpValueType>, BeliefValueType, BeliefMdpValueType, PolicyValueType> checker(
+        *prepared.pomdp);
     return checker.checkDiscretize(env, prepared.propertyInformation, effectiveOptions, resolution, useDynamic, bounds);
 }
 
@@ -166,5 +168,12 @@ template beliefs::BeliefBasedModelCheckerResult<storm::RationalNumber> verifyWit
 template beliefs::BeliefBasedModelCheckerResult<storm::RationalNumber> verifyWithBeliefDiscretization<double, double, storm::RationalNumber>(
     storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&, uint64_t, bool,
     beliefs::BeliefBasedModelCheckerOptions<storm::RationalNumber> const&);
+
+template beliefs::BeliefBasedModelCheckerResult<double, storm::RationalNumber> verifyWithBeliefUnfolding<double, double, double, storm::RationalNumber>(
+    storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&,
+    beliefs::BeliefBasedModelCheckerOptions<double> const&);
+template beliefs::BeliefBasedModelCheckerResult<double, storm::RationalNumber> verifyWithBeliefDiscretization<double, double, double, storm::RationalNumber>(
+    storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&, uint64_t, bool,
+    beliefs::BeliefBasedModelCheckerOptions<double> const&);
 
 }  // namespace storm::pomdp::api

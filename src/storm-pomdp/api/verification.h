@@ -42,17 +42,19 @@ namespace storm::pomdp::api {
  * auto result = storm::pomdp::api::verifyWithBeliefUnfolding(env, pomdp, formula, options);
  * @endcode
  */
-template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfolding(
+template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType,
+         typename PolicyValueType = BeliefMdpValueType>
+beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> verifyWithBeliefUnfolding(
     storm::Environment const& env, storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula,
     beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options);
 
 /** Uses a default Environment; otherwise identical to the environment-taking overload. */
-template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfolding(
+template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType,
+         typename PolicyValueType = BeliefMdpValueType>
+beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> verifyWithBeliefUnfolding(
     storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula,
     beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options) {
-    return verifyWithBeliefUnfolding<PomdpValueType, BeliefValueType, BeliefMdpValueType>(storm::Environment(), pomdp, formula, options);
+    return verifyWithBeliefUnfolding<PomdpValueType, BeliefValueType, BeliefMdpValueType, PolicyValueType>(storm::Environment(), pomdp, formula, options);
 }
 
 /**
@@ -69,18 +71,20 @@ beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfol
  * auto result = storm::pomdp::api::verifyWithBeliefDiscretization(env, pomdp, formula, 10, true);
  * @endcode
  */
-template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefDiscretization(
+template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType,
+         typename PolicyValueType = BeliefMdpValueType>
+beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> verifyWithBeliefDiscretization(
     storm::Environment const& env, storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula, uint64_t resolution = 2,
     bool useDynamic = false, beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options = {});
 
 /** Uses a default Environment; otherwise identical to the environment-taking overload. */
-template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefDiscretization(
+template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType,
+         typename PolicyValueType = BeliefMdpValueType>
+beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> verifyWithBeliefDiscretization(
     storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula, uint64_t resolution = 2, bool useDynamic = false,
     beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options = {}) {
-    return verifyWithBeliefDiscretization<PomdpValueType, BeliefValueType, BeliefMdpValueType>(storm::Environment(), pomdp, formula, resolution, useDynamic,
-                                                                                               options);
+    return verifyWithBeliefDiscretization<PomdpValueType, BeliefValueType, BeliefMdpValueType, PolicyValueType>(storm::Environment(), pomdp, formula,
+                                                                                                                resolution, useDynamic, options);
 }
 
 }  // namespace storm::pomdp::api
