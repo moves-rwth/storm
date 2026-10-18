@@ -172,6 +172,243 @@
       ]
     },
     {
+      "name": "Only Z3 (SMT)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_MATHSAT=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CVC5",
+        "MATHSAT"
+      ]
+    },
+    {
+      "name": "Only MathSAT (SMT)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_Z3=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CVC5",
+        "Z3"
+      ]
+    },
+    {
+      "name": "Only cvc5 (SMT)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_MATHSAT=ON -DSTORM_DISABLE_Z3=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "MATHSAT",
+        "Z3"
+      ]
+    },
+    {
+      "name": "No SMT solver",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_MATHSAT=ON -DSTORM_DISABLE_Z3=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CVC5",
+        "MATHSAT",
+        "Z3"
+      ]
+    },
+    {
+      "name": "cvc5 as default SMT solver",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DEFAULT_SMT_SOLVER=cvc5",
+      "baseImg": "movesrwth/storm-dependencies:latest"
+    },
+    {
+      "name": "Only GLPK (LP)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON -DSTORM_DISABLE_SOPLEX=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GUROBI",
+        "HIGHS",
+        "SOPLEX"
+      ]
+    },
+    {
+      "name": "Only HiGHS (LP)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_SOPLEX=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GLPK",
+        "GUROBI",
+        "SOPLEX"
+      ]
+    },
+    {
+      "name": "Only SoPlex (LP)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GLPK",
+        "GUROBI",
+        "HIGHS"
+      ]
+    },
+    {
+      "name": "Only Z3 (LP)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON -DSTORM_DISABLE_SOPLEX=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GLPK",
+        "GUROBI",
+        "HIGHS",
+        "SOPLEX"
+      ]
+    },
+    {
+      "name": "No LP solver",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON -DSTORM_DISABLE_SOPLEX=ON -DSTORM_DISABLE_Z3=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GLPK",
+        "GUROBI",
+        "HIGHS",
+        "SOPLEX",
+        "Z3"
+      ]
+    },
+    {
+      "name": "Only CUDD (DD)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_SYLVAN=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "SYLVAN"
+      ]
+    },
+    {
+      "name": "Only Sylvan (DD)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CUDD=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CUDD"
+      ]
+    },
+    {
+      "name": "No DD library",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CUDD=ON -DSTORM_DISABLE_SYLVAN=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CUDD",
+        "SYLVAN"
+      ]
+    },
+    {
+      "name": "No Spot",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_SPOT=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "SPOT"
+      ]
+    },
+    {
+      "name": "No Xerces",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_XERCES=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "XERCES"
+      ]
+    },
+    {
+      "name": "No LibArchive",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_LIBARCHIVE=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "LIBARCHIVE"
+      ]
+    },
+    {
+      "name": "No GMM",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GMM=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GMM"
+      ]
+    },
+    {
       "name": "GCC",
       "buildTypes": {
         "quick": [
