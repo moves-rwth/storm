@@ -1,7 +1,7 @@
 name: CI Prepare configurations
 # Load CI configurations from .github/workflows/ci-configs.json
 # 1. Validate each entry's fields against a known allow-list per category
-# 2. Merge in the shared defaults from .github/actions/build-test-action/defaults.json
+# 2. Merge in the shared defaults from the "defaults" entry of ci-configs.json
 # 3. Filter configurations according to the given mode (keys of "buildTypes") and expand them per build type
 # 4. Derive the expected configuration: all optional libraries are expected, except those in "expectNotHave"
 
@@ -38,14 +38,25 @@ jobs:
         uses: actions/checkout@v7
       - name: Validate config field names
         run: |
-          BLOB_KEYS=$(jq -c 'keys' .github/actions/build-test-action/defaults.json)
-          declare -A STRUCTURAL_KEYS=(
-            [linuxTests]='["name","buildTypes","cache","cmakeArgs","baseImg","setup"]'
-            [macTests]='["name","buildTypes","cache","cmakeArgs","distro","xcode"]'
+          # Defaults must be given as an object
+          if [ "$(jq -r '.defaults | type' .github/workflows/ci-configs.json)" != "object" ]; then
+            echo "::error::Entry 'defaults' in ci-configs.json must be an object"
+            exit 1
+          fi
+          if [ "$(jq -r '.defaults.cache | type' .github/workflows/ci-configs.json)" != "boolean" ]; then
+            echo "::error::Field 'cache' in the defaults of ci-configs.json must be true or false"
+            exit 1
+          fi
+          DEFAULT_KEYS=$(jq -c '.defaults | keys' .github/workflows/ci-configs.json)
+          # Allowed fields of a config: the fields with a default value (keys of "defaults")
+          # plus the category-specific fields without default listed here.
+          declare -A CATEGORY_KEYS=(
+            [linuxTests]='["name","buildTypes","cmakeArgs","baseImg","setup"]'
+            [macTests]='["name","buildTypes","cmakeArgs","distro","xcode"]'
           )
 
           for cat in linuxTests macTests; do
-            allowed=$(jq -c --argjson a "${STRUCTURAL_KEYS[$cat]}" --argjson b "$BLOB_KEYS" -n '$a + $b')
+            allowed=$(jq -c --argjson a "${CATEGORY_KEYS[$cat]}" --argjson b "$DEFAULT_KEYS" -n '$a + $b')
             unknown=$(jq -c --argjson allowed "$allowed" --arg cat "$cat" '
               [ .[$cat][] | (keys - $allowed) | select(length > 0) ] | add // []
             ' .github/workflows/ci-configs.json)
@@ -88,7 +99,7 @@ jobs:
         env:
           MODE: ${{ inputs.mode }}
         run: |
-          DEFAULTS=$(cat .github/actions/build-test-action/defaults.json)
+          DEFAULTS=$(jq -c '.defaults' .github/workflows/ci-configs.json)
           # A config runs in a mode if the mode is a key of its "buildTypes".
           # It is expanded into one entry per build type given for the mode (field "buildType").
           # The field "cache" enables ccache (restore, save on master) in quick/normal; caching is never used in extensive.
@@ -99,7 +110,7 @@ jobs:
               '.[$cat] | map(($defaults + .) | select(.buildTypes | has($scope))
                              | . as $c | $c.buildTypes[$scope][] | $c + {buildType: .}
                              | del(.buildTypes)
-                             | .cache = ((.cache // false) and $scope != "extensive")
+                             | .cache = (.cache and $scope != "extensive")
                              | ($libs - .expectNotHave) as $have
                              | ($have + [$aggregated | to_entries[] | select(any(.value[]; IN($have[]))) | .key]) as $have
                              | .expectHave = ($have | map("STORM_HAVE_" + .))
