@@ -37,8 +37,8 @@ jobs:
         run: |
           BLOB_KEYS=$(jq -c 'keys' .github/actions/build-test-action/defaults.json)
           declare -A STRUCTURAL_KEYS=(
-            [linuxTests]='["name","buildTypes","cmakeArgs","baseImg","setup"]'
-            [macTests]='["name","buildTypes","cmakeArgs","distro","xcode"]'
+            [linuxTests]='["name","buildTypes","cache","cmakeArgs","baseImg","setup"]'
+            [macTests]='["name","buildTypes","cache","cmakeArgs","distro","xcode"]'
           )
 
           for cat in linuxTests macTests; do
@@ -62,6 +62,14 @@ jobs:
               echo "::error::Field 'buildTypes' in ci-configs.json category '$cat' must map quick/normal/extensive to a non-empty list of Debug/Release for: $invalid"
               exit 1
             fi
+            # Field cache must be a boolean
+            invalid=$(jq -c --arg cat "$cat" '
+              [ .[$cat][] | select(has("cache") and (.cache | type) != "boolean") | .name ]
+            ' .github/workflows/ci-configs.json)
+            if [ "$invalid" != "[]" ]; then
+              echo "::error::Field 'cache' in ci-configs.json category '$cat' must be true or false for: $invalid"
+              exit 1
+            fi
             # Field expectNotHave must only contain known optional libraries
             invalid=$(jq -c --arg cat "$cat" --argjson libs "$OPTIONAL_LIBS" '
               [ .[$cat][] | select(has("expectNotHave"))
@@ -80,14 +88,15 @@ jobs:
           DEFAULTS=$(cat .github/actions/build-test-action/defaults.json)
           # A config runs in a mode if the mode is a key of its "buildTypes".
           # It is expanded into one entry per build type given for the mode (field "buildType").
-          # The field "scope" lists all modes of the config (used, e.g., by ci.yml).
+          # The field "cache" enables ccache (restore, save on master) in quick/normal; caching is never used in extensive.
           # The expected configuration is turned into full lists of STORM_HAVE_* defines (expectHave, expectNotHave).
           for cat in linuxTests macTests; do
             filtered=$(jq -c --argjson defaults "$DEFAULTS" --arg cat "$cat" --arg scope "$MODE" \
               --argjson libs "$OPTIONAL_LIBS" --argjson aggregated "$AGGREGATED_LIBS" \
               '.[$cat] | map(($defaults + .) | select(.buildTypes | has($scope))
-                             | . as $c | $c.buildTypes[$scope][] | $c + {buildType: ., scope: ($c.buildTypes | keys)}
+                             | . as $c | $c.buildTypes[$scope][] | $c + {buildType: .}
                              | del(.buildTypes)
+                             | .cache = ((.cache // false) and $scope != "extensive")
                              | ($libs - .expectNotHave) as $have
                              | ($have + [$aggregated | to_entries[] | select(any(.value[]; IN($have[]))) | .key]) as $have
                              | .expectHave = ($have | map("STORM_HAVE_" + .))

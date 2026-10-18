@@ -2,6 +2,7 @@
   "linuxTests": [
     {
       "name": "All dependencies",
+      "cache": true,
       "buildTypes": {
         "quick": [
           "Debug",
@@ -21,6 +22,7 @@
     },
     {
       "name": "Minimal dependencies",
+      "cache": true,
       "buildTypes": {
         "quick": [
           "Release"
@@ -410,6 +412,7 @@
     },
     {
       "name": "GCC",
+      "cache": true,
       "buildTypes": {
         "quick": [
           "Debug"
@@ -434,6 +437,7 @@
     },
     {
       "name": "Clang",
+      "cache": true,
       "buildTypes": {
         "quick": [
           "Debug"
@@ -478,6 +482,7 @@
     },
     {
       "name": "Debian 12",
+      "cache": true,
       "buildTypes": {
         "quick": [
           "Release"
@@ -523,6 +528,7 @@
     },
     {
       "name": "Ubuntu 24.04",
+      "cache": true,
       "buildTypes": {
         "quick": [
           "Release"
@@ -591,6 +597,7 @@
     },
     {
       "name": "Mac 26 ARM",
+      "cache": true,
       "buildTypes": {
         "quick": [
           "Release"
