@@ -2,7 +2,7 @@ name: CI Prepare configurations
 # Load CI configurations from .github/workflows/ci-configs.json
 # 1. Validate each entry's fields against a known allow-list per category
 # 2. Merge in the shared defaults from .github/actions/build-test-action/defaults.json
-# 3. Filter configurations according to given "scope"
+# 3. Filter configurations according to the given mode (keys of "buildTypes") and expand them per build type
 
 on:
   workflow_call:
@@ -30,8 +30,8 @@ jobs:
         run: |
           BLOB_KEYS=$(jq -c 'keys' .github/actions/build-test-action/defaults.json)
           declare -A STRUCTURAL_KEYS=(
-            [linuxTests]='["name","scope","buildType","cmakeArgs","baseImg","setup"]'
-            [macTests]='["name","scope","buildType","cmakeArgs","distro","xcode"]'
+            [linuxTests]='["name","buildTypes","cmakeArgs","baseImg","setup"]'
+            [macTests]='["name","buildTypes","cmakeArgs","distro","xcode"]'
           )
 
           for cat in linuxTests macTests; do
@@ -43,16 +43,33 @@ jobs:
               echo "::error::Unknown field(s) in ci-configs.json category '$cat': $unknown"
               exit 1
             fi
+            # Each config must map the modes it runs in (quick, normal, extensive) to a non-empty list of build types
+            invalid=$(jq -c --arg cat "$cat" '
+              [ .[$cat][] | select((.buildTypes | type) != "object" or (.buildTypes | length) == 0
+                                   or any(.buildTypes | to_entries[];
+                                          (.key | IN("quick", "normal", "extensive") | not)
+                                          or (.value | type) != "array" or (.value | length) == 0
+                                          or any(.value[]; IN("Debug", "Release") | not))) | .name ]
+            ' .github/workflows/ci-configs.json)
+            if [ "$invalid" != "[]" ]; then
+              echo "::error::Field 'buildTypes' in ci-configs.json category '$cat' must map quick/normal/extensive to a non-empty list of Debug/Release for: $invalid"
+              exit 1
+            fi
           done
-      - name: Resolve defaults and filter configs by scope
+      - name: Resolve defaults and filter configs by mode
         id: filter
         env:
           MODE: ${{ inputs.mode }}
         run: |
           DEFAULTS=$(cat .github/actions/build-test-action/defaults.json)
+          # A config runs in a mode if the mode is a key of its "buildTypes".
+          # It is expanded into one entry per build type given for the mode (field "buildType").
+          # The field "scope" lists all modes of the config (used, e.g., by ci.yml).
           for cat in linuxTests macTests; do
             filtered=$(jq -c --argjson defaults "$DEFAULTS" --arg cat "$cat" --arg scope "$MODE" \
-              '.[$cat] | map(($defaults + .) | select(.scope | index($scope)))' \
+              '.[$cat] | map(($defaults + .) | select(.buildTypes | has($scope))
+                             | . as $c | $c.buildTypes[$scope][] | $c + {buildType: ., scope: ($c.buildTypes | keys)}
+                             | del(.buildTypes))' \
               .github/workflows/ci-configs.json)
             echo "$cat=$filtered" >> "$GITHUB_OUTPUT"
           done

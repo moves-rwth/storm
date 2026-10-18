@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Load configurations and filter according to scope (quick/normal)
+  # Load configurations for the extensive mode
   prepare:
     uses: ./.github/workflows/ci-prepare-configs.yml
     with:
@@ -16,13 +16,12 @@ jobs:
 
   linuxTests:
     needs: prepare
-    name: ${{ matrix.config.name }} (${{ matrix.buildType }})
+    name: ${{ matrix.config.name }} (${{ matrix.config.buildType }})
     runs-on: ubuntu-latest
     container: ${{ matrix.config.baseImg }}
     strategy:
       fail-fast: false
       matrix:
-        buildType: ["Debug", "Release"]
         config: ${{ fromJson(needs.prepare.outputs.linuxTests) }}
     steps:
       - name: Git clone
@@ -50,9 +49,9 @@ jobs:
         id: resolve-config
         env:
           CONFIG: ${{ toJson(matrix.config) }}
-        # Update config: set build type, set developer mode for debug
+        # Update config: set developer mode for debug
         run: |
-          RESOLVED=$(echo "$CONFIG" | jq -c --arg bt "${{ matrix.buildType }}" '.buildType = $bt | .Developer = (.buildType == "Debug")')
+          RESOLVED=$(echo "$CONFIG" | jq -c '.Developer = (.buildType == "Debug")')
           echo "config=$RESOLVED" >> "$GITHUB_OUTPUT"
       - name: Build and test Storm
         uses: ./.github/actions/build-test-action
@@ -68,12 +67,11 @@ jobs:
 
   macTests:
     needs: prepare
-    name: ${{ matrix.config.name }} (${{ matrix.buildType }})
+    name: ${{ matrix.config.name }} (${{ matrix.config.buildType }})
     runs-on: ${{ matrix.config.distro }}
     strategy:
       fail-fast: false
       matrix:
-        buildType: ["Debug", "Release"]
         config: ${{ fromJson(needs.prepare.outputs.macTests) }}
     steps:
       - name: Git clone
@@ -96,9 +94,9 @@ jobs:
         id: resolve-config
         env:
           CONFIG: ${{ toJson(matrix.config) }}
-        # Update config: set build type, set developer mode for debug
+        # Update config: set developer mode for debug
         run: |
-          RESOLVED=$(echo "$CONFIG" | jq -c --arg bt "${{ matrix.buildType }}" '.buildType = $bt | .Developer = (.buildType == "Debug")')
+          RESOLVED=$(echo "$CONFIG" | jq -c '.Developer = (.buildType == "Debug")')
           echo "config=$RESOLVED" >> "$GITHUB_OUTPUT"
       - name: Build and test Storm
         uses: ./.github/actions/build-test-action

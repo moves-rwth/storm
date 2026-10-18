@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Load configurations and filter according to scope (quick/normal)
+  # Load configurations and filter according to mode (quick/normal)
   prepare:
     uses: ./.github/workflows/ci-prepare-configs.yml
     with:
