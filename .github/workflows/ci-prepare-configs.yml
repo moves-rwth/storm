@@ -3,6 +3,7 @@ name: CI Prepare configurations
 # 1. Validate each entry's fields against a known allow-list per category
 # 2. Merge in the shared defaults from .github/actions/build-test-action/defaults.json
 # 3. Filter configurations according to the given mode (keys of "buildTypes") and expand them per build type
+# 4. Derive the expected configuration: all optional libraries are expected, except those in "expectNotHave"
 
 on:
   workflow_call:
@@ -23,6 +24,12 @@ jobs:
     outputs:
       linuxTests: ${{ steps.filter.outputs.linuxTests }}
       macTests: ${{ steps.filter.outputs.macTests }}
+    env:
+      # Optional libraries whose availability (STORM_HAVE_<lib>) is checked after configuring.
+      # When adding a library here, add it to "expectNotHave" of all configs whose environment does not provide it.
+      OPTIONAL_LIBS: '["CUDD","CVC5","GLPK","GMM","GUROBI","HIGHS","LIBARCHIVE","MATHSAT","SOPLEX","SPOT","SYLVAN","XERCES","Z3"]'
+      # Aggregated defines which are also checked: available if any of the given libraries is available
+      AGGREGATED_LIBS: '{"LP_SOLVER":["GLPK","GUROBI","HIGHS","SOPLEX","Z3"],"DD_LIBRARY":["CUDD","SYLVAN"]}'
     steps:
       - name: Git clone
         uses: actions/checkout@v7
@@ -55,6 +62,15 @@ jobs:
               echo "::error::Field 'buildTypes' in ci-configs.json category '$cat' must map quick/normal/extensive to a non-empty list of Debug/Release for: $invalid"
               exit 1
             fi
+            # Field expectNotHave must only contain known optional libraries
+            invalid=$(jq -c --arg cat "$cat" --argjson libs "$OPTIONAL_LIBS" '
+              [ .[$cat][] | select(has("expectNotHave"))
+                | select((.expectNotHave | type) != "array" or any(.expectNotHave[]; IN($libs[]) | not)) | .name ]
+            ' .github/workflows/ci-configs.json)
+            if [ "$invalid" != "[]" ]; then
+              echo "::error::Field 'expectNotHave' in ci-configs.json category '$cat' must be a list of libraries from $OPTIONAL_LIBS for: $invalid"
+              exit 1
+            fi
           done
       - name: Resolve defaults and filter configs by mode
         id: filter
@@ -65,11 +81,17 @@ jobs:
           # A config runs in a mode if the mode is a key of its "buildTypes".
           # It is expanded into one entry per build type given for the mode (field "buildType").
           # The field "scope" lists all modes of the config (used, e.g., by ci.yml).
+          # The expected configuration is turned into full lists of STORM_HAVE_* defines (expectHave, expectNotHave).
           for cat in linuxTests macTests; do
             filtered=$(jq -c --argjson defaults "$DEFAULTS" --arg cat "$cat" --arg scope "$MODE" \
+              --argjson libs "$OPTIONAL_LIBS" --argjson aggregated "$AGGREGATED_LIBS" \
               '.[$cat] | map(($defaults + .) | select(.buildTypes | has($scope))
                              | . as $c | $c.buildTypes[$scope][] | $c + {buildType: ., scope: ($c.buildTypes | keys)}
-                             | del(.buildTypes))' \
+                             | del(.buildTypes)
+                             | ($libs - .expectNotHave) as $have
+                             | ($have + [$aggregated | to_entries[] | select(any(.value[]; IN($have[]))) | .key]) as $have
+                             | .expectHave = ($have | map("STORM_HAVE_" + .))
+                             | .expectNotHave = (($libs + ($aggregated | keys_unsorted)) - $have | map("STORM_HAVE_" + .)))' \
               .github/workflows/ci-configs.json)
             echo "$cat=$filtered" >> "$GITHUB_OUTPUT"
           done

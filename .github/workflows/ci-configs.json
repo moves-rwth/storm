@@ -38,7 +38,22 @@
       "disable_all": true,
       "ClnExact": false,
       "ClnRatfunc": false,
-      "starterProjectCommand": "--help"
+      "starterProjectCommand": "--help",
+      "expectNotHave": [
+        "CUDD",
+        "CVC5",
+        "GLPK",
+        "GMM",
+        "GUROBI",
+        "HIGHS",
+        "LIBARCHIVE",
+        "MATHSAT",
+        "SOPLEX",
+        "SPOT",
+        "SYLVAN",
+        "XERCES",
+        "Z3"
+      ]
     },
     {
       "name": "GMP; GMP; Required dependencies",
@@ -54,7 +69,14 @@
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-basesystem:latest",
       "ClnExact": false,
-      "ClnRatfunc": false
+      "ClnRatfunc": false,
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "CLN; GMP; Required dependencies",
@@ -67,7 +89,14 @@
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-basesystem:latest",
       "ClnExact": true,
-      "ClnRatfunc": false
+      "ClnRatfunc": false,
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "GMP; CLN; Required dependencies",
@@ -80,7 +109,14 @@
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-basesystem:latest",
       "ClnExact": false,
-      "ClnRatfunc": true
+      "ClnRatfunc": true,
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "CLN; CLN; Required dependencies",
@@ -96,7 +132,14 @@
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-basesystem:latest",
       "ClnExact": true,
-      "ClnRatfunc": true
+      "ClnRatfunc": true,
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "All dependencies (disabled)",
@@ -111,7 +154,22 @@
       "disable_all": true,
       "ClnExact": false,
       "ClnRatfunc": false,
-      "starterProjectCommand": "--help"
+      "starterProjectCommand": "--help",
+      "expectNotHave": [
+        "CUDD",
+        "CVC5",
+        "GLPK",
+        "GMM",
+        "GUROBI",
+        "HIGHS",
+        "LIBARCHIVE",
+        "MATHSAT",
+        "SOPLEX",
+        "SPOT",
+        "SYLVAN",
+        "XERCES",
+        "Z3"
+      ]
     },
     {
       "name": "GCC",
@@ -129,7 +187,13 @@
       },
       "cmakeArgs": "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "setup": "pacman -Syu --noconfirm && pacman -S --noconfirm base-devel ccache cmake git boost cln ginac glpk gmp highs hwloc libarchive xerces-c z3",
-      "baseImg": "archlinux:latest"
+      "baseImg": "archlinux:latest",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Clang",
@@ -147,7 +211,13 @@
       },
       "cmakeArgs": "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "setup": "pacman -Syu --noconfirm && pacman -S --noconfirm base-devel ccache cmake git boost cln ginac glpk gmp highs hwloc libarchive xerces-c z3 clang llvm",
-      "baseImg": "archlinux:latest"
+      "baseImg": "archlinux:latest",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "musl",
@@ -159,7 +229,15 @@
       },
       "cmakeArgs": "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_HIGHS=ON",
       "setup": "apk add --no-cache bash ccache cmake make gcc g++ git autoconf automake libc-dev linux-headers patch boost-dev gmp-dev cln-dev ginac-dev glpk-dev libarchive-dev z3-dev ",
-      "baseImg": "alpine:edge"
+      "baseImg": "alpine:edge",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX",
+        "XERCES"
+      ]
     },
     {
       "name": "Debian 12",
@@ -176,7 +254,14 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:debian-12"
+      "baseImg": "movesrwth/storm-basesystem:debian-12",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Debian 13",
@@ -190,7 +275,14 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:debian-13"
+      "baseImg": "movesrwth/storm-basesystem:debian-13",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Ubuntu 24.04",
@@ -207,7 +299,14 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:ubuntu-24.04"
+      "baseImg": "movesrwth/storm-basesystem:ubuntu-24.04",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     }
   ],
   "macTests": [
@@ -221,7 +320,13 @@
       },
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "macos-14",
-      "xcode": "15.4"
+      "xcode": "15.4",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Mac 15 ARM",
@@ -236,7 +341,13 @@
       },
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "macos-15",
-      "xcode": "16.4"
+      "xcode": "16.4",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Mac 26 ARM",
@@ -254,7 +365,13 @@
       },
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "macos-26",
-      "xcode": "latest-stable"
+      "xcode": "latest-stable",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Mac 26 Intel",
@@ -266,7 +383,13 @@
       },
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "macos-26-intel",
-      "xcode": "latest-stable"
+      "xcode": "latest-stable",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "XCode 27 ARM",
@@ -281,7 +404,13 @@
       },
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "xcode-27",
-      "xcode": "latest"
+      "xcode": "latest",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     }
   ]
 }

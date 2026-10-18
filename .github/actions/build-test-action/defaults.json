@@ -4,5 +4,6 @@
   "disable_all": false,
   "ClnExact": false,
   "ClnRatfunc": true,
-  "AllSanitizers": false
+  "AllSanitizers": false,
+  "expectNotHave": []
 }
