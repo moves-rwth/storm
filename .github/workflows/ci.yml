@@ -2,7 +2,7 @@ name: CI
 # Build Storm and perform checks (run tests, check compiler flags, build starter project)
 
 # on every pull request commit: run "quick" configs
-# for every PR labeled "ready for review", on every master push: run "normal" configs
+# for every PR when labeled "ready for review" (other labels are ignored), on every master push: run "normal" configs
 # every week: run "extensive" configs (no cache, not fail-fast, including deploy)
 # on a manual run: run the configs of the selected mode
 # Configurations are defined in ci-configs.json.
@@ -26,13 +26,16 @@ on:
 
 # On PRs a newer run cancels the running one.
 # On master pushes each run is its own group (via run_id) so CI is never canceled.
+# Adding other labels than "ready for review" also uses its own group so it does not cancel the running CI.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  group: ${{ github.workflow }}-${{ (github.event.action == 'labeled' && github.event.label.name != 'ready for review') && github.run_id || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   # Load configurations and filter according to mode (quick/normal/extensive)
   prepare:
+    # Skip if a label other than "ready for review" was added (all other jobs depend on prepare)
+    if: github.event.action != 'labeled' || github.event.label.name == 'ready for review'
     uses: ./.github/workflows/ci-prepare-configs.yml
     with:
       mode: ${{ github.event_name == 'schedule' && 'extensive'
