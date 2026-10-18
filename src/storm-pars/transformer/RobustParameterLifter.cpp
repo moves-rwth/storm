@@ -202,8 +202,10 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
         exprBounds = exprBounds && expressionManager->rational(0) <= var && var <= expressionManager->rational(1);
     }
 
-    bool const timeoutSet = smtSolver->setTimeout(50);
-    STORM_LOG_WARN_COND(timeoutSet, "The SMT solver does not support timeouts, checking the region may take long.");
+    if (!smtSolver->setTimeout(50)) {
+        // Without a timeout, the search for zeroes might not terminate in reasonable time.
+        return std::nullopt;
+    }
 
     smtSolver->add(exprBounds);
     smtSolver->add(expression);
@@ -465,6 +467,10 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
                 zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
             } else {
                 zeroes = zeroesSMT(derivative, p);
+                if (!zeroes) {
+                    // The SMT solver could not find the zeroes, e.g., because of a timeout. Fall back to carl's root finder.
+                    zeroes = zeroesCarl(nominatorAsUnivariate, p);
+                }
             }
             STORM_LOG_ERROR_COND(zeroes, "Zeroes of " << derivative << " could not be found.");
             for (auto const& zero : *zeroes) {
