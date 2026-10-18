@@ -9,10 +9,12 @@ on:
   workflow_call:
     inputs:
       mode:
-        description: "Which configs to select (quick normal, extensive)"
+        description: "Which configs to select (quick, normal, extensive)"
         type: string
         required: true
     outputs:
+      mode:
+        value: ${{ jobs.prepare.outputs.mode }}
       linuxTests:
         value: ${{ jobs.prepare.outputs.linuxTests }}
       macTests:
@@ -22,6 +24,7 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
+      mode: ${{ inputs.mode }}
       linuxTests: ${{ steps.filter.outputs.linuxTests }}
       macTests: ${{ steps.filter.outputs.macTests }}
     env:
