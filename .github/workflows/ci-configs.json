@@ -544,27 +544,30 @@
         "MATHSAT",
         "SOPLEX"
       ]
-    }
-  ],
-  "macTests": [
+    },
     {
-      "name": "Mac 14 ARM",
+      "name": "Ubuntu 26.04",
       "buildTypes": {
+        "normal": [
+          "Release"
+        ],
         "extensive": [
           "Debug",
           "Release"
         ]
       },
-      "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
-      "distro": "macos-14",
-      "xcode": "15.4",
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:ubuntu-26.04",
       "expectNotHave": [
         "CVC5",
         "GUROBI",
+        "HIGHS",
         "MATHSAT",
         "SOPLEX"
       ]
-    },
+    }
+  ],
+  "macTests": [
     {
       "name": "Mac 15 ARM",
       "buildTypes": {
@@ -629,7 +632,7 @@
       ]
     },
     {
-      "name": "XCode 27 ARM",
+      "name": "Mac 27 ARM",
       "buildTypes": {
         "normal": [
           "Release"
@@ -641,7 +644,7 @@
       },
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "xcode-27",
-      "xcode": "latest",
+      "xcode": "latest-stable",
       "expectNotHave": [
         "CVC5",
         "GUROBI",
