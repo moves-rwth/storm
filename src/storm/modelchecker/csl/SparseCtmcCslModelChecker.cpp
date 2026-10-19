@@ -99,9 +99,7 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
     auto ret = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeGloballyProbabilities(
         env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), probabilisticTransitions, probabilisticTransitions.transpose(),
         subResult.getTruthValuesVector(), checkTask.isQualitativeSet());
-    auto result = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret.values));
-    result->setBounds(std::move(ret.solutionBounds));
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret));
 }
 
 template<typename SparseCtmcModelType>
@@ -116,9 +114,7 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
         env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(),
         checkTask.isQualitativeSet());
-    auto result = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret.values));
-    result->setBounds(std::move(ret.solutionBounds));
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret));
 }
 
 template<typename SparseCtmcModelType>
@@ -203,9 +199,7 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
         env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), this->getModel().getExitRateVector(), rewardModel.get(), subResult.getTruthValuesVector(),
         checkTask.isQualitativeSet());
-    auto result = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret.values));
-    result->setBounds(std::move(ret.solutionBounds));
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret));
 }
 
 template<typename SparseCtmcModelType>
@@ -215,9 +209,7 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
     auto ret = storm::modelchecker::helper::SparseCtmcCslHelper::computeTotalRewards(
         env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), this->getModel().getExitRateVector(), rewardModel.get(), checkTask.isQualitativeSet());
-    auto result = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret.values));
-    result->setBounds(std::move(ret.solutionBounds));
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret));
 }
 
 template<typename SparseCtmcModelType>
@@ -256,9 +248,7 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
     auto ret = storm::modelchecker::helper::SparseCtmcCslHelper::computeReachabilityTimes(
         env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet());
-    auto result = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret.values));
-    result->setBounds(std::move(ret.solutionBounds));
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret));
 }
 
 template<typename SparseCtmcModelType>

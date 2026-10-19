@@ -192,12 +192,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(),
         checkTask.isProduceSchedulersSet(), checkTask.getHint());
-    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(ret.values)));
-    result->asExplicitQuantitativeCheckResult<SolutionType>().setBounds(std::move(ret.solutionBounds));
-    if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
-        result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(ret.scheduler));
-    }
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret));
 }
 
 template<typename SparseMdpModelType>
@@ -211,12 +206,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     auto ret = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeGloballyProbabilities(
         env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), checkTask.isProduceSchedulersSet());
-    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(ret.values)));
-    result->asExplicitQuantitativeCheckResult<SolutionType>().setBounds(std::move(ret.solutionBounds));
-    if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
-        result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(ret.scheduler));
-    }
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret));
 }
 
 template<typename SparseMdpModelType>
@@ -409,12 +399,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), rewardModel.get(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(),
         checkTask.isProduceSchedulersSet(), checkTask.getHint());
-    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(ret.values)));
-    result->asExplicitQuantitativeCheckResult<SolutionType>().setBounds(std::move(ret.solutionBounds));
-    if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
-        result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(ret.scheduler));
-    }
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret));
 }
 
 template<typename SparseMdpModelType>
@@ -433,12 +418,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), checkTask.isProduceSchedulersSet(),
         checkTask.getHint());
-    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(ret.values)));
-    result->asExplicitQuantitativeCheckResult<SolutionType>().setBounds(std::move(ret.solutionBounds));
-    if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
-        result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(ret.scheduler));
-    }
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret));
 }
 
 template<typename SparseMdpModelType>
@@ -454,12 +434,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     auto ret = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeTotalRewards(
         env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), rewardModel.get(), checkTask.isQualitativeSet(), checkTask.isProduceSchedulersSet(), checkTask.getHint());
-    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(ret.values)));
-    result->asExplicitQuantitativeCheckResult<SolutionType>().setBounds(std::move(ret.solutionBounds));
-    if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
-        result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(ret.scheduler));
-    }
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret));
 }
 
 template<>
@@ -486,12 +461,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), rewardModel.get(), checkTask.isQualitativeSet(), checkTask.isProduceSchedulersSet(), discountFactor,
         checkTask.getHint());
-    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(ret.values)));
-    result->asExplicitQuantitativeCheckResult<SolutionType>().setBounds(std::move(ret.solutionBounds));
-    if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
-        result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(ret.scheduler));
-    }
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret));
 }
 
 template<typename SparseMdpModelType>

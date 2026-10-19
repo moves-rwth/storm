@@ -15,9 +15,16 @@
 namespace storm {
 
 namespace modelchecker {
-// Forward declaration
+// Forward declarations
 template<typename ValueType>
 class ExplicitQualitativeCheckResult;
+
+namespace helper {
+template<typename ValueType>
+struct SparseDeterministicModelCheckingHelperReturnType;
+template<typename ValueType, typename ValuesType>
+struct MDPSparseModelCheckingHelperReturnType;
+}  // namespace helper
 
 /*!
  * A quantitative check result over the states of a sparse model.
@@ -60,6 +67,17 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     ExplicitQuantitativeCheckResult(std::vector<ValueType>&& values)
         requires(!std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>);
     ExplicitQuantitativeCheckResult(storm::storage::BitVector states, std::vector<ValueType>&& values)
+        requires(!std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>);
+
+    /*!
+     * Takes over the outcome of a model checking helper, i.e. its values together with the bounds on them and, for a
+     * nondeterministic model, the scheduler it computed.
+     */
+    explicit ExplicitQuantitativeCheckResult(helper::SparseDeterministicModelCheckingHelperReturnType<ExtendedValueType>&& helperResult);
+    explicit ExplicitQuantitativeCheckResult(helper::SparseDeterministicModelCheckingHelperReturnType<ValueType>&& helperResult)
+        requires(!std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>);
+    explicit ExplicitQuantitativeCheckResult(helper::MDPSparseModelCheckingHelperReturnType<ValueType, ExtendedValueType>&& helperResult);
+    explicit ExplicitQuantitativeCheckResult(helper::MDPSparseModelCheckingHelperReturnType<ValueType, ValueType>&& helperResult)
         requires(!std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>);
 
     ExplicitQuantitativeCheckResult(ExplicitQuantitativeCheckResult const& other) = default;
