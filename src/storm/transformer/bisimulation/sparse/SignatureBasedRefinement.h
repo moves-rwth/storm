@@ -1,8 +1,8 @@
 #pragma once
 
 #include "storm/models/sparse/ModelForward.h"
-#include "storm/transformer/bisimulation/Partition.h"
-#include "storm/transformer/bisimulation/Signatures.h"
+#include "storm/transformer/bisimulation/sparse/Partition.h"
+#include "storm/transformer/bisimulation/sparse/Signatures.h"
 
 namespace storm::bisimulation {
 

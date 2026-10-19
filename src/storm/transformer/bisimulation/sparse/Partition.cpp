@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/Partition.h"
+#include "storm/transformer/bisimulation/sparse/Partition.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 

@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/WeakBisimulationData.h"
+#include "storm/transformer/bisimulation/sparse/WeakBisimulationData.h"
 
 #include <utility>
 

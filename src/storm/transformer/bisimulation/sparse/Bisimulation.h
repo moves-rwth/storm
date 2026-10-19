@@ -6,7 +6,7 @@
 
 #include "storm/logic/FormulasForwardDeclarations.h"
 #include "storm/models/sparse/ModelForward.h"
-#include "storm/transformer/bisimulation/Options.h"
+#include "storm/transformer/bisimulation/sparse/Options.h"
 
 namespace storm::bisimulation {
 

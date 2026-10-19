@@ -13,10 +13,10 @@
 #include "storm/models/sparse/ModelForward.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/transformer/bisimulation/Options.h"
-#include "storm/transformer/bisimulation/Partition.h"
-#include "storm/transformer/bisimulation/PreservationInformation.h"
-#include "storm/transformer/bisimulation/WeakBisimulationData.h"
+#include "storm/transformer/bisimulation/sparse/Options.h"
+#include "storm/transformer/bisimulation/sparse/Partition.h"
+#include "storm/transformer/bisimulation/sparse/PreservationInformation.h"
+#include "storm/transformer/bisimulation/sparse/WeakBisimulationData.h"
 
 namespace storm::bisimulation {
 

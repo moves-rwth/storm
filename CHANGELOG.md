@@ -15,6 +15,7 @@ Version 2.0.x
     * `storm/storage/umb/model/` -> `storm/languages/umb/`
     * `storm/storage/umb/` -> `storm/io/umb/`
     * `storm/storage/dd/bisimulation/` -> `storm/transformer/bisimulation/dd/`
+    * `storm/transformer/bisimulation/` (sparse bisimulation, except `BisimulationType.h`) -> `storm/transformer/bisimulation/sparse/`
     * `storm-cli-utilities/Qvbs.h` -> `storm/io/Qvbs.h` (class `QvbsBenchmark` moved to namespace `storm::io`)
 
 

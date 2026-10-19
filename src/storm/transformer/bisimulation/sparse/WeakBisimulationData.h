@@ -5,7 +5,7 @@
 
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/transformer/bisimulation/Partition.h"
+#include "storm/transformer/bisimulation/sparse/Partition.h"
 #include "storm/utility/constants.h"
 
 namespace storm::bisimulation {

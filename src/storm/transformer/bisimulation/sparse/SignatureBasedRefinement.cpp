@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/SignatureBasedRefinement.h"
+#include "storm/transformer/bisimulation/sparse/SignatureBasedRefinement.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -7,9 +7,9 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/transformer/bisimulation/Partition.h"
-#include "storm/transformer/bisimulation/Signatures.h"
-#include "storm/transformer/bisimulation/SparseAccumulator.h"
+#include "storm/transformer/bisimulation/sparse/Partition.h"
+#include "storm/transformer/bisimulation/sparse/Signatures.h"
+#include "storm/transformer/bisimulation/sparse/SparseAccumulator.h"
 #include "storm/utility/macros.h"
 
 namespace storm::bisimulation {

@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/QuotientData.h"
+#include "storm/transformer/bisimulation/sparse/QuotientData.h"
 
 #include <algorithm>
 #include <limits>

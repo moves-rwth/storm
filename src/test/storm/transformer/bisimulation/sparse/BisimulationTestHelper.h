@@ -26,7 +26,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
-#include "storm/transformer/bisimulation/Bisimulation.h"
+#include "storm/transformer/bisimulation/sparse/Bisimulation.h"
 #include "storm/utility/constants.h"
 
 /*!

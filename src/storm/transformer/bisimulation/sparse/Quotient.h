@@ -3,9 +3,9 @@
 #include <memory>
 
 #include "storm/models/sparse/ModelForward.h"
-#include "storm/transformer/bisimulation/Options.h"
-#include "storm/transformer/bisimulation/PreservationInformation.h"
-#include "storm/transformer/bisimulation/QuotientData.h"
+#include "storm/transformer/bisimulation/sparse/Options.h"
+#include "storm/transformer/bisimulation/sparse/PreservationInformation.h"
+#include "storm/transformer/bisimulation/sparse/QuotientData.h"
 
 namespace storm::bisimulation {
 

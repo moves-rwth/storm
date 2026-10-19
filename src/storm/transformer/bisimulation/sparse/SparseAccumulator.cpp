@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/SparseAccumulator.h"
+#include "storm/transformer/bisimulation/sparse/SparseAccumulator.h"
 
 #include <utility>
 

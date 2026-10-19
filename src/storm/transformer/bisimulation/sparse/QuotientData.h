@@ -7,8 +7,8 @@
 
 #include "storm/models/sparse/ModelForward.h"
 #include "storm/storage/BitVector.h"
-#include "storm/transformer/bisimulation/Partition.h"
-#include "storm/transformer/bisimulation/WeakBisimulationData.h"
+#include "storm/transformer/bisimulation/sparse/Partition.h"
+#include "storm/transformer/bisimulation/sparse/WeakBisimulationData.h"
 #include "storm/utility/OptionalRef.h"
 
 namespace storm::bisimulation {

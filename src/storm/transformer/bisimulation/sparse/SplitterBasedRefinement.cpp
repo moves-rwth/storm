@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/SplitterBasedRefinement.h"
+#include "storm/transformer/bisimulation/sparse/SplitterBasedRefinement.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -13,9 +13,9 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/transformer/bisimulation/Partition.h"
-#include "storm/transformer/bisimulation/SparseAccumulator.h"
-#include "storm/transformer/bisimulation/WeakBisimulationData.h"
+#include "storm/transformer/bisimulation/sparse/Partition.h"
+#include "storm/transformer/bisimulation/sparse/SparseAccumulator.h"
+#include "storm/transformer/bisimulation/sparse/WeakBisimulationData.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "storm/models/sparse/ModelForward.h"
-#include "storm/transformer/bisimulation/Partition.h"
-#include "storm/transformer/bisimulation/QuotientData.h"
+#include "storm/transformer/bisimulation/sparse/Partition.h"
+#include "storm/transformer/bisimulation/sparse/QuotientData.h"
 
 namespace storm::bisimulation {
 

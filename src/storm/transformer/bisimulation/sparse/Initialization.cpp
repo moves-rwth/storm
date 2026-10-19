@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/Initialization.h"
+#include "storm/transformer/bisimulation/sparse/Initialization.h"
 
 #include <algorithm>
 #include <map>

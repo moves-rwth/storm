@@ -37,7 +37,7 @@
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/transformer/bisimulation/Options.h"
+#include "storm/transformer/bisimulation/sparse/Options.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Stopwatch.h"

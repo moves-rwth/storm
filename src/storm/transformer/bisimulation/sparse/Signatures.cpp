@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/Signatures.h"
+#include "storm/transformer/bisimulation/sparse/Signatures.h"
 
 #include <algorithm>
 #include <limits>

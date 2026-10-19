@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/Quotient.h"
+#include "storm/transformer/bisimulation/sparse/Quotient.h"
 
 #include <map>
 #include <optional>
