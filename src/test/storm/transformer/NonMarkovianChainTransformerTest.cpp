@@ -5,7 +5,7 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
 #ifndef STORM_HAVE_Z3

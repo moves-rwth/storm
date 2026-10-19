@@ -15,7 +15,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/parser/CSVParser.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 namespace {
 

@@ -2,7 +2,7 @@
 
 #include "storm-parsers/storm-parsers-api.h"
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 namespace storm {
 namespace prism {

@@ -10,7 +10,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 class SparseMdpCbMultiObjectiveModelCheckerTest : public ::testing::Test {
    protected:

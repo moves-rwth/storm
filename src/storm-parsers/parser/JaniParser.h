@@ -6,10 +6,10 @@
 #include "storm/logic/Formula.h"
 #include "storm/logic/RewardAccumulation.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Constant.h"
-#include "storm/storage/jani/FunctionDefinition.h"
-#include "storm/storage/jani/LValue.h"
-#include "storm/storage/jani/expressions/ValueArrayExpression.h"
+#include "storm/languages/jani/Constant.h"
+#include "storm/languages/jani/FunctionDefinition.h"
+#include "storm/languages/jani/LValue.h"
+#include "storm/languages/jani/expressions/ValueArrayExpression.h"
 
 namespace storm {
 namespace jani {

@@ -14,7 +14,7 @@
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
-#include "storm/storage/jani/Compositions.h"
+#include "storm/languages/jani/Compositions.h"
 
 namespace {
 

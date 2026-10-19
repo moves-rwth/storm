@@ -5,7 +5,7 @@
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Model.h"
+#include "storm/languages/jani/Model.h"
 #include "storm/storage/prism/Program.h"
 
 namespace storm {

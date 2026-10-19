@@ -2,7 +2,7 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/ModelFeatures.h"
+#include "storm/languages/jani/ModelFeatures.h"
 
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"

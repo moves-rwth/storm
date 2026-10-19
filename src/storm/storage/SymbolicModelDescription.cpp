@@ -6,9 +6,9 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Automaton.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

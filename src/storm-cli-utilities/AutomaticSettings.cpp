@@ -4,8 +4,8 @@
 
 #include "storm/logic/FormulaInformation.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Property.h"
-#include "storm/storage/jani/traverser/InformationCollector.h"
+#include "storm/languages/jani/Property.h"
+#include "storm/languages/jani/traverser/InformationCollector.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"

@@ -8,8 +8,8 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/storage/jani/Edge.h"
-#include "storm/storage/jani/EdgeDestination.h"
+#include "storm/languages/jani/Edge.h"
+#include "storm/languages/jani/EdgeDestination.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 

@@ -12,7 +12,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 class SparseMaCbMultiObjectiveModelCheckerTest : public ::testing::Test {
    protected:

@@ -4,7 +4,7 @@
 
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Variable.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/utility/OptionalRef.h"
 
 #include "storm/builder/TerminalStatesGetter.h"

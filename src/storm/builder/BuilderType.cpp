@@ -9,7 +9,7 @@
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/storage/dd/DdType.h"
-#include "storm/storage/jani/ModelFeatures.h"
+#include "storm/languages/jani/ModelFeatures.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

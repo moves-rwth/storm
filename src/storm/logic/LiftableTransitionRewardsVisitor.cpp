@@ -2,7 +2,7 @@
 #include <boost/any.hpp>
 
 #include "storm/logic/Formulas.h"
-#include "storm/storage/jani/traverser/RewardModelInformation.h"
+#include "storm/languages/jani/traverser/RewardModelInformation.h"
 
 namespace storm {
 namespace logic {

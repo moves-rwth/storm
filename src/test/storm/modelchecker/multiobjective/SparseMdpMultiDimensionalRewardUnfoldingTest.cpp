@@ -11,7 +11,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/utility/constants.h"
 
 class SparseMdpMultiDimensionalRewardUnfoldingTest : public ::testing::Test {

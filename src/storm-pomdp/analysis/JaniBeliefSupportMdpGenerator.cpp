@@ -8,7 +8,7 @@
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Model.h"
+#include "storm/languages/jani/Model.h"
 
 namespace storm {
 namespace pomdp {

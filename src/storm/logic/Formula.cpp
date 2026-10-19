@@ -10,7 +10,7 @@
 #include "storm/logic/ToExpressionVisitor.h"
 #include "storm/logic/ToPrefixStringVisitor.h"
 #include "storm/logic/TraverseFormulaVisitor.h"
-#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "storm/languages/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
 namespace logic {

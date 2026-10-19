@@ -7,8 +7,8 @@
 #include "storm/logic/Formula.h"
 #include "storm/logic/RewardAccumulationEliminationVisitor.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/utility/string.h"
 

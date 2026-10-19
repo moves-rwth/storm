@@ -10,7 +10,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Model.h"
+#include "storm/languages/jani/Model.h"
 
 namespace {
 

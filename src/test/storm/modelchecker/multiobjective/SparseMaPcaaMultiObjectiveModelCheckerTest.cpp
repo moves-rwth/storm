@@ -16,7 +16,7 @@
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
 #include "storm/storage/geometry/Polytope.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 class SparseMaPcaaMultiObjectiveModelCheckerTest : public ::testing::Test {
    protected:

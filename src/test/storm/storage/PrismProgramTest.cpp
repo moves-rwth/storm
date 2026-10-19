@@ -3,7 +3,7 @@
 
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Model.h"
+#include "storm/languages/jani/Model.h"
 #include "storm/utility/solver.h"
 
 #ifdef STORM_HAVE_MATHSAT

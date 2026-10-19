@@ -15,7 +15,7 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
 #include "storm/storage/geometry/Polytope.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 template<typename ValueType>
 bool expectPointConained(std::vector<std::vector<ValueType>> const& pointset, std::vector<ValueType> const& point, ValueType precision) {

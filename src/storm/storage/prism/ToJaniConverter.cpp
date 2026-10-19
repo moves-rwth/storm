@@ -2,12 +2,12 @@
 
 #include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
-#include "storm/storage/jani/TemplateEdge.h"
-#include "storm/storage/jani/expressions/FunctionCallExpression.h"
-#include "storm/storage/jani/types/AllJaniTypes.h"
-#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/Property.h"
+#include "storm/languages/jani/TemplateEdge.h"
+#include "storm/languages/jani/expressions/FunctionCallExpression.h"
+#include "storm/languages/jani/types/AllJaniTypes.h"
+#include "storm/languages/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/prism/CompositionToJaniVisitor.h"
 #include "storm/storage/prism/Program.h"
 

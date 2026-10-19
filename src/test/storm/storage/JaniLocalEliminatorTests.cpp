@@ -12,13 +12,13 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/ModelFeatures.h"
-#include "storm/storage/jani/Property.h"
-#include "storm/storage/jani/localeliminator/EliminateAction.h"
-#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
-#include "storm/storage/jani/localeliminator/RebuildWithoutUnreachableAction.h"
-#include "storm/storage/jani/localeliminator/UnfoldAction.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/ModelFeatures.h"
+#include "storm/languages/jani/Property.h"
+#include "storm/languages/jani/localeliminator/EliminateAction.h"
+#include "storm/languages/jani/localeliminator/JaniLocalEliminator.h"
+#include "storm/languages/jani/localeliminator/RebuildWithoutUnreachableAction.h"
+#include "storm/languages/jani/localeliminator/UnfoldAction.h"
 
 typedef storm::models::sparse::Dtmc<double> Dtmc;
 typedef storm::models::sparse::Mdp<double> Mdp;

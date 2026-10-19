@@ -8,7 +8,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/utility/constants.h"
 
 class SparseDtmcMultiDimensionalRewardUnfoldingTest : public ::testing::Test {

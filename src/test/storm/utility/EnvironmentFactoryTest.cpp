@@ -16,7 +16,7 @@
 #include "storm/settings/EnvironmentBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/constants.h"

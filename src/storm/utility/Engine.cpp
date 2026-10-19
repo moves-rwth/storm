@@ -17,7 +17,7 @@
 #include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
