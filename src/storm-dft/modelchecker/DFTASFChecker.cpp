@@ -11,6 +11,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Type.h"
 #include "storm/utility/bitoperations.h"
+#include "storm/utility/solver.h"
 
 namespace storm::dft {
 namespace modelchecker {
@@ -542,7 +543,7 @@ void DFTASFChecker::toSolver() {
     convert();
 
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-    solver = storm::utility::solver::SmtSolverFactory().create(*manager);
+    solver = storm::utility::solver::getSmtSolver(*manager);
     // Add variables to manager
     for (auto const &timeVarEntry : timePointVariables) {
         manager->declareIntegerVariable(varNames[timeVarEntry.second]);

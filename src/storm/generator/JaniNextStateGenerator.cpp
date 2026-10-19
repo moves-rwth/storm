@@ -283,8 +283,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
 
     if (this->model.hasNonTrivialInitialStates()) {
         // Prepare an SMT solver to enumerate all initial states.
-        storm::utility::solver::SmtSolverFactory factory;
-        std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
+        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(model.getExpressionManager());
 
         std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(this->parallelAutomata);
         for (auto const& expression : rangeExpressions) {
