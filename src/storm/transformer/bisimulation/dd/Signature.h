@@ -2,7 +2,7 @@
 
 #include "storm/storage/dd/DdType.h"
 
-#include "storm/storage/dd/bisimulation/Partition.h"
+#include "storm/transformer/bisimulation/dd/Partition.h"
 
 namespace storm {
 namespace dd {

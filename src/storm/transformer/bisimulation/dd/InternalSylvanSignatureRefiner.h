@@ -2,7 +2,7 @@
 
 #include "storm-config.h"
 #include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
+#include "storm/transformer/bisimulation/dd/InternalSignatureRefiner.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/dd/sylvan/utility.h"
 

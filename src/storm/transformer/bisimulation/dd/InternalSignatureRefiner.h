@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm/storage/dd/DdType.h"
-#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
+#include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
 
 namespace storm {
 namespace dd {

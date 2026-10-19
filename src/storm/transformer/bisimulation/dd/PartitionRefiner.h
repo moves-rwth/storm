@@ -1,11 +1,11 @@
 #pragma once
 
-#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
-#include "storm/storage/dd/bisimulation/Partition.h"
-#include "storm/storage/dd/bisimulation/Status.h"
+#include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
+#include "storm/transformer/bisimulation/dd/Partition.h"
+#include "storm/transformer/bisimulation/dd/Status.h"
 
-#include "storm/storage/dd/bisimulation/SignatureComputer.h"
-#include "storm/storage/dd/bisimulation/SignatureRefiner.h"
+#include "storm/transformer/bisimulation/dd/SignatureComputer.h"
+#include "storm/transformer/bisimulation/dd/SignatureRefiner.h"
 
 namespace storm {
 namespace models {

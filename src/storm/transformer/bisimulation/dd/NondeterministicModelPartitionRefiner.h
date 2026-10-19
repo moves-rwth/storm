@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/dd/bisimulation/PartitionRefiner.h"
+#include "storm/transformer/bisimulation/dd/PartitionRefiner.h"
 
 namespace storm {
 namespace models {

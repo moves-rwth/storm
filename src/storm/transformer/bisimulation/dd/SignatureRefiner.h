@@ -4,9 +4,9 @@
 
 #include "storm/storage/dd/DdType.h"
 
-#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
-#include "storm/storage/dd/bisimulation/Partition.h"
-#include "storm/storage/dd/bisimulation/Signature.h"
+#include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
+#include "storm/transformer/bisimulation/dd/Partition.h"
+#include "storm/transformer/bisimulation/dd/Signature.h"
 
 namespace storm {
 namespace dd {

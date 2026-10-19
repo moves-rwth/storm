@@ -1,9 +1,9 @@
-#include "storm/storage/dd/bisimulation/SignatureRefiner.h"
+#include "storm/transformer/bisimulation/dd/SignatureRefiner.h"
 
 #include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/bisimulation/InternalCuddSignatureRefiner.h"
-#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
-#include "storm/storage/dd/bisimulation/InternalSylvanSignatureRefiner.h"
+#include "storm/transformer/bisimulation/dd/InternalCuddSignatureRefiner.h"
+#include "storm/transformer/bisimulation/dd/InternalSignatureRefiner.h"
+#include "storm/transformer/bisimulation/dd/InternalSylvanSignatureRefiner.h"
 
 namespace storm {
 namespace dd {

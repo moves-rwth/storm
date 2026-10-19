@@ -19,8 +19,8 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/solver/SymbolicLinearEquationSolver.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
-#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
+#include "storm/transformer/bisimulation/dd/BisimulationDecomposition.h"
+#include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
 #include "storm/utility/constants.h"
 
 class Cudd {

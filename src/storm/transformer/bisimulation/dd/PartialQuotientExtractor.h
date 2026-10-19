@@ -7,9 +7,9 @@
 #include "storm/models/sparse/Model.h"
 #include "storm/models/symbolic/Model.h"
 
-#include "storm/storage/dd/bisimulation/Partition.h"
-#include "storm/storage/dd/bisimulation/PreservationInformation.h"
-#include "storm/storage/dd/bisimulation/QuotientFormat.h"
+#include "storm/transformer/bisimulation/dd/Partition.h"
+#include "storm/transformer/bisimulation/dd/PreservationInformation.h"
+#include "storm/transformer/bisimulation/dd/QuotientFormat.h"
 
 namespace storm {
 namespace dd {

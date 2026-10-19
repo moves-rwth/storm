@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/PartitionRefiner.h"
+#include "storm/transformer/bisimulation/dd/PartitionRefiner.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 

@@ -5,10 +5,10 @@
 
 #include "storm/logic/Formula.h"
 #include "storm/storage/dd/DdType.h"
-#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
-#include "storm/storage/dd/bisimulation/PreservationInformation.h"
-#include "storm/storage/dd/bisimulation/QuotientFormat.h"
-#include "storm/storage/dd/bisimulation/SignatureMode.h"
+#include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
+#include "storm/transformer/bisimulation/dd/PreservationInformation.h"
+#include "storm/transformer/bisimulation/dd/QuotientFormat.h"
+#include "storm/transformer/bisimulation/dd/SignatureMode.h"
 #include "storm/transformer/bisimulation/BisimulationType.h"
 
 namespace storm {

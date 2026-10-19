@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
+#include "storm/transformer/bisimulation/dd/InternalSignatureRefiner.h"
 
 namespace storm {
 namespace dd {

@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/PreservationInformation.h"
+#include "storm/transformer/bisimulation/dd/PreservationInformation.h"
 
 #include "storm/logic/Formulas.h"
 

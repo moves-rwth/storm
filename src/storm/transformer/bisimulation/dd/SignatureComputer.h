@@ -4,9 +4,9 @@
 
 #include "storm/storage/dd/DdType.h"
 
-#include "storm/storage/dd/bisimulation/Partition.h"
-#include "storm/storage/dd/bisimulation/Signature.h"
-#include "storm/storage/dd/bisimulation/SignatureMode.h"
+#include "storm/transformer/bisimulation/dd/Partition.h"
+#include "storm/transformer/bisimulation/dd/Signature.h"
+#include "storm/transformer/bisimulation/dd/SignatureMode.h"
 
 #include "storm/models/symbolic/Model.h"
 

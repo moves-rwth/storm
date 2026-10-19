@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/Partition.h"
+#include "storm/transformer/bisimulation/dd/Partition.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -8,7 +8,7 @@
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/bisimulation/PreservationInformation.h"
+#include "storm/transformer/bisimulation/dd/PreservationInformation.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

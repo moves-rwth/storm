@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include "storm/storage/dd/bisimulation/InitialPartitionMode.h"
-#include "storm/storage/dd/bisimulation/RefinementMode.h"
-#include "storm/storage/dd/bisimulation/ReuseMode.h"
+#include "storm/transformer/bisimulation/dd/InitialPartitionMode.h"
+#include "storm/transformer/bisimulation/dd/RefinementMode.h"
+#include "storm/transformer/bisimulation/dd/ReuseMode.h"
 
 namespace storm {
 namespace dd {

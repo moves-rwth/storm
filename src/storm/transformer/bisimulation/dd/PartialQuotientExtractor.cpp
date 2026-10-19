@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/PartialQuotientExtractor.h"
+#include "storm/transformer/bisimulation/dd/PartialQuotientExtractor.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
