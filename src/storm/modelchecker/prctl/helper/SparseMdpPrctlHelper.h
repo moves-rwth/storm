@@ -45,10 +45,13 @@ class SparseMdpPrctlHelper {
                                                                 rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding,
                                                                 storm::storage::BitVector const& initialStates);
 
-    static std::vector<SolutionType> computeNextProbabilities(Environment const& env, OptimizationDirection dir,
-                                                              UncertaintyResolutionMode uncertaintyResolutionMode,
-                                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                              storm::storage::BitVector const& nextStates);
+    /*!
+     * @return The probabilities, which a single matrix-vector multiplication settles exactly.
+     */
+    static MDPSparseModelCheckingHelperReturnType<SolutionType> computeNextProbabilities(Environment const& env, OptimizationDirection dir,
+                                                                                         UncertaintyResolutionMode uncertaintyResolutionMode,
+                                                                                         storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                                         storm::storage::BitVector const& nextStates);
 
     static MDPSparseModelCheckingHelperReturnType<SolutionType> computeUntilProbabilities(
         Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,

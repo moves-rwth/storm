@@ -274,9 +274,9 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllUntilProbabilities(Environ
 }
 
 template<typename ValueType>
-std::vector<ValueType> SparseCtmcCslHelper::computeNextProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
-                                                                     std::vector<ValueType> const& exitRateVector,
-                                                                     storm::storage::BitVector const& nextStates) {
+SparseDeterministicModelCheckingHelperReturnType<ValueType> SparseCtmcCslHelper::computeNextProbabilities(
+    Environment const& env, storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector,
+    storm::storage::BitVector const& nextStates) {
     return SparseDtmcPrctlHelper<ValueType>::computeNextProbabilities(env, computeProbabilityMatrix(rateMatrix, exitRateVector), nextStates);
 }
 
@@ -764,9 +764,9 @@ template std::vector<double> SparseCtmcCslHelper::computeAllUntilProbabilities(E
                                                                                storm::storage::BitVector const& phiStates,
                                                                                storm::storage::BitVector const& psiStates);
 
-template std::vector<double> SparseCtmcCslHelper::computeNextProbabilities(Environment const& env, storm::storage::SparseMatrix<double> const& rateMatrix,
-                                                                           std::vector<double> const& exitRateVector,
-                                                                           storm::storage::BitVector const& nextStates);
+template SparseDeterministicModelCheckingHelperReturnType<double> SparseCtmcCslHelper::computeNextProbabilities(
+    Environment const& env, storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRateVector,
+    storm::storage::BitVector const& nextStates);
 
 template std::vector<double> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal,
                                                                               storm::storage::SparseMatrix<double> const& rateMatrix,
@@ -826,11 +826,10 @@ template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeAllUnt
     std::vector<storm::RationalFunction> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates,
     storm::storage::BitVector const& psiStates);
 
-template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeNextProbabilities(Environment const& env,
-                                                                                          storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
-                                                                                          std::vector<storm::RationalNumber> const& exitRateVector,
-                                                                                          storm::storage::BitVector const& nextStates);
-template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeNextProbabilities(
+template SparseDeterministicModelCheckingHelperReturnType<storm::RationalNumber> SparseCtmcCslHelper::computeNextProbabilities(
+    Environment const& env, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix, std::vector<storm::RationalNumber> const& exitRateVector,
+    storm::storage::BitVector const& nextStates);
+template SparseDeterministicModelCheckingHelperReturnType<storm::RationalFunction> SparseCtmcCslHelper::computeNextProbabilities(
     Environment const& env, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, std::vector<storm::RationalFunction> const& exitRateVector,
     storm::storage::BitVector const& nextStates);
 

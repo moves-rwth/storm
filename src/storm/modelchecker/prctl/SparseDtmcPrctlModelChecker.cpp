@@ -130,12 +130,9 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
         storm::logic::NextFormula const& pathFormula = checkTask.getFormula();
         std::unique_ptr<CheckResult> subResultPointer = this->check(env, pathFormula.getSubformula());
         ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
-        std::vector<SolutionType> numericResult =
-            storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeNextProbabilities(
-                env, this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
-        auto result = std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(numericResult));
-        result->setValuesExact();
-        return result;
+        auto ret = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeNextProbabilities(
+            env, this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
+        return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret));
     }
 }
 

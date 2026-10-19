@@ -123,7 +123,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
 }
 
 template<typename ValueType, typename SolutionType>
-std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeNextProbabilities(
+MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeNextProbabilities(
     Environment const& env, OptimizationDirection dir, UncertaintyResolutionMode uncertaintyResolutionMode,
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates) {
     // Create the vector with which to multiply and initialize it correctly.
@@ -133,7 +133,9 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, transitionMatrix);
     multiplier->multiplyAndReduce(env, dir, result, nullptr, result, uncertaintyResolutionMode);
 
-    return result;
+    MDPSparseModelCheckingHelperReturnType<SolutionType> returnValue(std::move(result));
+    returnValue.solutionBounds.setExact(returnValue.values);
+    return returnValue;
 }
 
 template<typename ValueType, typename SolutionType = ValueType>

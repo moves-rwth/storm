@@ -42,9 +42,14 @@ class SparseCtmcCslHelper {
                                                                std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& initialStates,
                                                                storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
 
+    /*!
+     * @return The probabilities, which a single matrix-vector multiplication settles exactly.
+     */
     template<typename ValueType>
-    static std::vector<ValueType> computeNextProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
-                                                           std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& nextStates);
+    static SparseDeterministicModelCheckingHelperReturnType<ValueType> computeNextProbabilities(Environment const& env,
+                                                                                                storm::storage::SparseMatrix<ValueType> const& rateMatrix,
+                                                                                                std::vector<ValueType> const& exitRateVector,
+                                                                                                storm::storage::BitVector const& nextStates);
 
     template<typename ValueType, typename RewardModelType>
         requires storm::NumberTraits<ValueType>::SupportsExponential

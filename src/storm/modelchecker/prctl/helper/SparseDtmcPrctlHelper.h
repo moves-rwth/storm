@@ -36,8 +36,11 @@ class SparseDtmcPrctlHelper {
     static std::vector<SolutionType> computeRewardBoundedValues(Environment const& env, storm::models::sparse::Dtmc<ValueType> const& model,
                                                                 std::shared_ptr<storm::logic::OperatorFormula const> rewardBoundedFormula);
 
-    static std::vector<SolutionType> computeNextProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                              storm::storage::BitVector const& nextStates);
+    /*!
+     * @return The probabilities, which a single matrix-vector multiplication settles exactly.
+     */
+    static SparseDeterministicModelCheckingHelperReturnType<SolutionType> computeNextProbabilities(
+        Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates);
 
     /*!
      * @return The probabilities, together with sound bounds on them if the equation solver provided any.

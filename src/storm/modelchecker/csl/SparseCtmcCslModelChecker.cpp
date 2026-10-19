@@ -82,11 +82,9 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
     storm::logic::NextFormula const& pathFormula = checkTask.getFormula();
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, pathFormula.getSubformula());
     ExplicitQualitativeCheckResult<ValueType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<ValueType>();
-    std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeNextProbabilities(
+    auto ret = storm::modelchecker::helper::SparseCtmcCslHelper::computeNextProbabilities(
         env, this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector());
-    auto result = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(numericResult));
-    result->setValuesExact();
-    return result;
+    return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret));
 }
 
 template<typename SparseCtmcModelType>
