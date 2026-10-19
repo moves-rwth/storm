@@ -1,4 +1,4 @@
-#include "storm/storage/ExplicitGameStrategy.h"
+#include "storm/storage/scheduler/ExplicitGameStrategy.h"
 
 #include <algorithm>
 #include <limits>

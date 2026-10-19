@@ -2,8 +2,8 @@
 
 #include <cstdint>
 #include "storm/storage/BitVector.h"
-#include "storm/storage/SchedulerChoice.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/scheduler/SchedulerChoice.h"
 
 namespace storm {
 

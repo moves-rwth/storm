@@ -5,7 +5,7 @@
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidPropertyException.h"

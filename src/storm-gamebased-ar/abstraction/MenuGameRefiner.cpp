@@ -8,9 +8,9 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/solver/MathsatSmtSolver.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/ExplicitGameStrategyPair.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Odd.h"
+#include "storm/storage/scheduler/ExplicitGameStrategyPair.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/shortestPaths.h"
 

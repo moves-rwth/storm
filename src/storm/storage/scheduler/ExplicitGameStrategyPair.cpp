@@ -1,4 +1,4 @@
-#include "storm/storage/ExplicitGameStrategyPair.h"
+#include "storm/storage/scheduler/ExplicitGameStrategyPair.h"
 
 namespace storm {
 namespace storage {

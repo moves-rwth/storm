@@ -1,4 +1,4 @@
-#include "storm/storage/SchedulerChoice.h"
+#include "storm/storage/scheduler/SchedulerChoice.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

@@ -30,10 +30,10 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/solver/StandardGameSolver.h"
 #include "storm/solver/SymbolicGameSolver.h"
-#include "storm/storage/ExplicitGameStrategyPair.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/VariableSetPredicateSplitter.h"
+#include "storm/storage/scheduler/ExplicitGameStrategyPair.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 

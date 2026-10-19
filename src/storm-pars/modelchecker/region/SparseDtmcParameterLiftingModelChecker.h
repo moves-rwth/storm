@@ -12,7 +12,7 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 namespace storm {
 namespace modelchecker {

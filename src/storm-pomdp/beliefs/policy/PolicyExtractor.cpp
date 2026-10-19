@@ -6,7 +6,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/Pomdp.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/storage/sparse/ModelComponents.h"
 
 #include <algorithm>

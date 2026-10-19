@@ -2,7 +2,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 TEST(SchedulerTest, TotalDeterministicMemorylessScheduler) {
     storm::storage::Scheduler<double> scheduler(4);

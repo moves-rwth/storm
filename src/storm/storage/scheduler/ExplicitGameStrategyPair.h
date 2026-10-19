@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <ostream>
 
-#include "storm/storage/ExplicitGameStrategy.h"
+#include "storm/storage/scheduler/ExplicitGameStrategy.h"
 
 namespace storm {
 namespace storage {

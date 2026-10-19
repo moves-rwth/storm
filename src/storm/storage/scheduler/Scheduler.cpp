@@ -1,4 +1,4 @@
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 #include <boost/algorithm/string/join.hpp>
 
