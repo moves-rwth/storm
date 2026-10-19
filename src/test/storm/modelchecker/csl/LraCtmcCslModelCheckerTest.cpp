@@ -8,6 +8,7 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
+#include "storm/dd/DdManager.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
@@ -25,7 +26,6 @@
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/storage/dd/DdManager.h"
 
 namespace {
 

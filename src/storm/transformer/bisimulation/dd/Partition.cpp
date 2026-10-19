@@ -1,13 +1,13 @@
 #include "storm/transformer/bisimulation/dd/Partition.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/Mdp.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/transformer/bisimulation/dd/PreservationInformation.h"
 #include "storm/utility/macros.h"
 

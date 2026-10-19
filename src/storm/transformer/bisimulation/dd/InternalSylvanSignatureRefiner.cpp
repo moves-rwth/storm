@@ -1,8 +1,8 @@
 #include "storm/transformer/bisimulation/dd/InternalSylvanSignatureRefiner.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/dd/DdManager.h"
+#include "storm/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/transformer/bisimulation/dd/Partition.h"
 #include "storm/transformer/bisimulation/dd/Signature.h"
 

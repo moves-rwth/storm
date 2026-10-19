@@ -8,7 +8,7 @@
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/Variable.h"
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 namespace storm::gbar {
 namespace abstraction {

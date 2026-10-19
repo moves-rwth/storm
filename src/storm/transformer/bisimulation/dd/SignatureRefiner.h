@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
 #include "storm/transformer/bisimulation/dd/Partition.h"

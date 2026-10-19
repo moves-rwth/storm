@@ -6,6 +6,8 @@
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdJaniModelBuilder.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/languages/SymbolicModelDescription.h"
 #include "storm/languages/jani/Compositions.h"
@@ -13,8 +15,6 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
 
 namespace {
 

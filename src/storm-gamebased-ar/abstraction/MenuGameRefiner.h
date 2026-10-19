@@ -14,7 +14,7 @@
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/FullPredicateSplitter.h"
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionOptions.h"
 

@@ -1,11 +1,11 @@
 #include "storm/transformer/bisimulation/dd/PartialQuotientExtractor.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

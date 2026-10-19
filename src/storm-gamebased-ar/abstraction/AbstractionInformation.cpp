@@ -1,8 +1,8 @@
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 
+#include "storm/dd/DdManager.h"
 #include "storm/environment/Environment.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/dd/DdManager.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"

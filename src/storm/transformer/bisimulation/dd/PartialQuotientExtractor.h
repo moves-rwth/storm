@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm/models/sparse/Model.h"
 #include "storm/models/symbolic/Model.h"

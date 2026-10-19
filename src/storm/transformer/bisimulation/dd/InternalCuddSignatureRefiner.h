@@ -9,8 +9,8 @@
 #pragma clang diagnostic pop
 #include <set>
 
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/cudd/utility.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/cudd/utility.h"
 #include "storm/transformer/bisimulation/dd/InternalSignatureRefiner.h"
 
 namespace storm {

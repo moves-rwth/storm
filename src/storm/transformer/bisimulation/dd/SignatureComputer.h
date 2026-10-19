@@ -2,7 +2,7 @@
 
 #include <boost/optional.hpp>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm/transformer/bisimulation/dd/Partition.h"
 #include "storm/transformer/bisimulation/dd/Signature.h"

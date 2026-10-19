@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/MenuGame.h"
@@ -9,7 +9,7 @@
 #include "storm-gamebased-ar/abstraction/ValidBlockAbstractor.h"
 #include "storm-gamebased-ar/abstraction/prism/ModuleAbstractor.h"
 
-#include "storm/storage/dd/Add.h"
+#include "storm/dd/Add.h"
 
 #include "storm/expressions/Expression.h"
 

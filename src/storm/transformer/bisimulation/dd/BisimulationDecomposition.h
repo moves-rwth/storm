@@ -3,8 +3,8 @@
 #include <memory>
 #include <vector>
 
+#include "storm/dd/DdType.h"
 #include "storm/logic/Formula.h"
-#include "storm/storage/dd/DdType.h"
 #include "storm/transformer/bisimulation/BisimulationType.h"
 #include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
 #include "storm/transformer/bisimulation/dd/PreservationInformation.h"

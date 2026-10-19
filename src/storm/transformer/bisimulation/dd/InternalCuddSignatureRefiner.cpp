@@ -1,7 +1,7 @@
 #include "storm/transformer/bisimulation/dd/InternalCuddSignatureRefiner.h"
 
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/MissingLibraryException.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/transformer/bisimulation/dd/Partition.h"
 #include "storm/transformer/bisimulation/dd/Signature.h"
 

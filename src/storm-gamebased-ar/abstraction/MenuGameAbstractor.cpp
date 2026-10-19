@@ -2,9 +2,9 @@
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
 #include "storm/io/file.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
 #include "storm/utility/dd.h"
 
 namespace storm::gbar {

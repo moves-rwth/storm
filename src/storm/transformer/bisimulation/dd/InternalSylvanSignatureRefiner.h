@@ -1,9 +1,9 @@
 #pragma once
 
 #include "storm-config.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
-#include "storm/storage/dd/sylvan/utility.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/dd/sylvan/utility.h"
 #include "storm/transformer/bisimulation/dd/InternalSignatureRefiner.h"
 
 namespace storm {

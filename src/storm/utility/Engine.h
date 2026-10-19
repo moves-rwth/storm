@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "storm/builder/BuilderType.h"
+#include "storm/dd/DdType.h"
 #include "storm/models/ModelType.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 

@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm/logic/Formula.h"
 

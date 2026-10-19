@@ -1,6 +1,6 @@
 #include "storm/transformer/bisimulation/dd/SignatureRefiner.h"
 
-#include "storm/storage/dd/DdManager.h"
+#include "storm/dd/DdManager.h"
 #include "storm/transformer/bisimulation/dd/InternalCuddSignatureRefiner.h"
 #include "storm/transformer/bisimulation/dd/InternalSignatureRefiner.h"
 #include "storm/transformer/bisimulation/dd/InternalSylvanSignatureRefiner.h"

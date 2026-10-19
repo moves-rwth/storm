@@ -5,9 +5,9 @@
 #include <set>
 #include <vector>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
-#include "storm/storage/dd/Bdd.h"
+#include "storm/dd/Bdd.h"
 
 #include "storm/solver/SmtSolver.h"
 

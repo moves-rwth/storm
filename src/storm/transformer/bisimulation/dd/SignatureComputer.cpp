@@ -1,6 +1,6 @@
 #include "storm/transformer/bisimulation/dd/SignatureComputer.h"
 
-#include "storm/storage/dd/DdManager.h"
+#include "storm/dd/DdManager.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 

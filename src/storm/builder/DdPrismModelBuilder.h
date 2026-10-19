@@ -11,7 +11,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/utility/macros.h"
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 namespace storm {
 class Environment;

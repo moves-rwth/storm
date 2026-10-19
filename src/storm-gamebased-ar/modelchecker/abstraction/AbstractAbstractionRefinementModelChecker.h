@@ -1,7 +1,7 @@
 #pragma once
 
+#include "storm/dd/DdType.h"
 #include "storm/modelchecker/AbstractModelChecker.h"
-#include "storm/storage/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionOptions.h"
 

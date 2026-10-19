@@ -2,9 +2,9 @@
 
 #include <set>
 
+#include "storm/dd/DdType.h"
 #include "storm/expressions/EquivalenceChecker.h"
 #include "storm/expressions/ExpressionVisitor.h"
-#include "storm/storage/dd/DdType.h"
 
 #include "storm/solver/SmtSolver.h"
 

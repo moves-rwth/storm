@@ -2,10 +2,10 @@
 
 #include "storm/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/Odd.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
+#include "storm/dd/Odd.h"
 #include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 
 #include "storm/utility/constants.h"

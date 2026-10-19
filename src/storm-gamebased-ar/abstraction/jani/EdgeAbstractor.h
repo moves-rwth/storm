@@ -11,8 +11,8 @@
 
 #include "storm/expressions/ExpressionEvaluator.h"
 
+#include "storm/dd/DdType.h"
 #include "storm/expressions/Expression.h"
-#include "storm/storage/dd/DdType.h"
 
 #include "storm/solver/SmtSolver.h"
 

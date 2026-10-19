@@ -6,8 +6,8 @@
 
 #include "storm/languages/prism/Program.h"
 
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/dd/Odd.h"
+#include "storm/dd/DdType.h"
+#include "storm/dd/Odd.h"
 
 #include "storm/languages/SymbolicModelDescription.h"
 

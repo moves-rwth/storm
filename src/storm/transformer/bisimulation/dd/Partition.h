@@ -5,9 +5,9 @@
 
 #include <boost/variant.hpp>
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdType.h"
 #include "storm/transformer/bisimulation/BisimulationType.h"
 #include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
 

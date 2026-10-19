@@ -7,6 +7,7 @@
 #include <numeric>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Ctmc.h"
@@ -21,7 +22,6 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/dd/DdManager.h"
 
 namespace storm {
 namespace dd {

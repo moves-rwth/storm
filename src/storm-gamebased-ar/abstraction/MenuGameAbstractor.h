@@ -3,7 +3,7 @@
 #include <map>
 #include <vector>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionOptions.h"
 #include "storm-gamebased-ar/abstraction/MenuGame.h"

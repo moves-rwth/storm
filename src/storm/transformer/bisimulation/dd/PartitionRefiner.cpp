@@ -2,7 +2,7 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
-#include "storm/storage/dd/DdManager.h"
+#include "storm/dd/DdManager.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
