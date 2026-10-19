@@ -19,6 +19,7 @@ Version 2.0.x
     * `storm-cli-utilities/Qvbs.h` -> `storm/io/Qvbs.h` (class `QvbsBenchmark` moved to namespace `storm::io`)
     * `storm/storage/SymbolicModelDescription.h` -> `storm/languages/SymbolicModelDescription.h` (moved to namespace `storm::languages`)
     * `storm/storage/expressions/` -> `storm/expressions/`
+    * `storm/storage/dd/` -> `storm/dd/`
     * `storm/storage/sparse/ValuationTransformer.h` -> `storm/storage/valuations/ValuationTransformer.h`
     * Decompositions (`Decomposition`, `StronglyConnectedComponent(Decomposition)`, `MaximalEndComponent(Decomposition)`, `RobustMaximalEndComponentDecomposition`, `StateBlock`) -> `storm/storage/decomposition/`
     * Schedulers (`Scheduler`, `SchedulerChoice`, `SchedulerClass`, `ExplicitGameStrategy(Pair)`) -> `storm/storage/scheduler/`
