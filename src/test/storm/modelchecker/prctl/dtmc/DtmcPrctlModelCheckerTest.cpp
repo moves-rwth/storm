@@ -30,6 +30,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/EigenLinearEquationSolver.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "test/storm/modelchecker/QuantitativeResultExpectations.h"
 
 namespace {
 
@@ -518,7 +519,7 @@ class DdSylvanRationalSearchEnvironment {
 };
 
 template<typename TestType>
-class DtmcPrctlModelCheckerTest : public ::testing::Test {
+class DtmcPrctlModelCheckerTest : public ::testing::Test, public storm::test::QuantitativeResultExpectations<DtmcPrctlModelCheckerTest<TestType>, TestType> {
    public:
     typedef typename TestType::ValueType ValueType;
     typedef typename storm::models::sparse::Dtmc<ValueType> SparseModelType;
@@ -640,42 +641,6 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
         auto filter = getInitialStateFilter(model);
         result->filter(*filter);
         return result->asQuantitativeCheckResult<ValueType>().getMin();
-    }
-
-    /*!
-     * Expects the value at the initial states to be the given one. Where the configuration reports sound bounds on
-     * the solution, they must enclose that value as well.
-     */
-    void expectQuantitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
-                                                std::unique_ptr<storm::modelchecker::CheckResult>& result, ValueType const& expected) {
-        EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
-        if (!result->isExplicitQuantitativeCheckResult()) {
-            return;  // Only explicit results carry bounds.
-        }
-        // The result is filtered to the initial states at this point, so the first entry belongs to the first initial state.
-        auto const& explicitResult = result->template asExplicitQuantitativeCheckResult<ValueType>();
-        ValueType const tolerance = TestType::isExact ? this->parseNumber("0") : this->parseNumber("1e-12");
-        if (explicitResult.hasLowerBounds()) {
-            EXPECT_LE(explicitResult.getLowerBoundVector().front(), expected + tolerance) << "The lower bound exceeds the expected value.";
-        }
-        if (explicitResult.hasUpperBounds()) {
-            EXPECT_LE(expected, explicitResult.getUpperBoundVector().front() + tolerance) << "The upper bound falls below the expected value.";
-        }
-    }
-
-    /*!
-     * Expects the value at the initial states to be the given one and the result to report it as exact.
-     */
-    void expectExactResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
-                                         std::unique_ptr<storm::modelchecker::CheckResult>& result, ValueType const& expected) {
-        expectQuantitativeResultAtInitialState(model, result, expected);
-        if (!result->isExplicitQuantitativeCheckResult()) {
-            return;  // Only explicit results carry bounds.
-        }
-        auto const& explicitResult = result->template asExplicitQuantitativeCheckResult<ValueType>();
-        ASSERT_TRUE(explicitResult.hasLowerBounds()) << "No lower bound was reported although the values are exact.";
-        ASSERT_TRUE(explicitResult.hasUpperBounds()) << "No upper bound was reported although the values are exact.";
-        EXPECT_EQ(explicitResult.getLowerBoundVector(), explicitResult.getUpperBoundVector()) << "The bounds do not pin the values down.";
     }
 
    private:
