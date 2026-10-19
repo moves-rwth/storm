@@ -12,11 +12,11 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/HashVisitor.h"
 
-namespace storm {
-namespace expressions {
+namespace storm::expressions {
 class ExpressionManager;
 }
-namespace analysis {
+
+namespace storm::pars::analysis {
 
 /*!
  * Class to collect constraints on parametric Markov chains.
@@ -163,5 +163,4 @@ class ConstraintCollector {
     void operator()(storm::models::sparse::Model<storm::RationalFunction> const& model);
 };
 
-}  // namespace analysis
-}  // namespace storm
+}  // namespace storm::pars::analysis

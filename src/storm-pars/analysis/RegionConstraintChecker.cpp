@@ -132,7 +132,7 @@ std::ostream& operator<<(std::ostream& out, RegionWitness const& witness) {
     return out;
 }
 
-RegionConstraintChecker::RegionConstraintChecker(storm::analysis::ConstraintCollector const& collector) : collector(collector) {}
+RegionConstraintChecker::RegionConstraintChecker(storm::pars::analysis::ConstraintCollector const& collector) : collector(collector) {}
 
 RegionCheckResult RegionConstraintChecker::checkWellformedness(RationalFunctionRegion const& region) const {
     return checkConstraints(this->collector.getWellformedConstraints(), region, "well-formedness");
@@ -154,7 +154,7 @@ bool RegionConstraintChecker::isGraphPreserving(RationalFunctionRegion const& re
     return checkGraphPreservation(region).holdsThroughout();
 }
 
-RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::ConstraintCollector::ConstraintSet const& constraints,
+RegionCheckResult RegionConstraintChecker::checkConstraints(storm::pars::analysis::ConstraintCollector::ConstraintSet const& constraints,
                                                             RationalFunctionRegion const& region, std::string const& label) {
     RegionCheckResult result;
     VariablesByName variables;

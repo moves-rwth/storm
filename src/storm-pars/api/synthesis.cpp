@@ -88,7 +88,7 @@ std::pair<Region, GraphStatus> resolveRegion(Model const& model, std::optional<R
     if (!requireGraphPreservation) {
         return {std::move(resolved), GraphStatus::None};
     }
-    storm::analysis::ConstraintCollector collector(model);
+    storm::pars::analysis::ConstraintCollector collector(model);
     storm::pars::analysis::RegionConstraintChecker checker(collector);
     STORM_LOG_THROW(checker.isGraphPreserving(resolved), storm::exceptions::NotSupportedException,
                     "This engine requires a well-defined, graph-preserving region. Provide an explicit graph-preserving region or use robust PLA for a DTMC. "

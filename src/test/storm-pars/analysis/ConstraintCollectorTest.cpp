@@ -8,9 +8,9 @@
 #include <sstream>
 #include <vector>
 
+#include "storm-pars/analysis/ConstraintCollector.h"
 #include "storm-pars/api/export.h"
 #include "storm-parsers/api/storm-parsers.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/api/storm.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/generator/NextStateGenerator.h"
@@ -37,7 +37,7 @@ std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> buildParam
 /*!
  * Collects the string representations of the given constraints in the collector's discovery order.
  */
-std::vector<std::string> asStringsInDiscoveryOrder(storm::analysis::ConstraintCollector::ConstraintSet const& constraints) {
+std::vector<std::string> asStringsInDiscoveryOrder(storm::pars::analysis::ConstraintCollector::ConstraintSet const& constraints) {
     std::vector<std::string> result;
     for (auto const& entry : constraints) {
         result.push_back(entry.toString());
@@ -50,7 +50,7 @@ std::vector<std::string> asStringsInDiscoveryOrder(storm::analysis::ConstraintCo
  * depend on the order, such as the set of collected constraints. Assertions about the order itself have to use
  * asStringsInDiscoveryOrder, since sorting here would hide any deviation from that order.
  */
-std::vector<std::string> asSortedStrings(storm::analysis::ConstraintCollector::ConstraintSet const& constraints) {
+std::vector<std::string> asSortedStrings(storm::pars::analysis::ConstraintCollector::ConstraintSet const& constraints) {
     auto result = asStringsInDiscoveryOrder(constraints);
     std::sort(result.begin(), result.end());
     return result;
@@ -58,7 +58,7 @@ std::vector<std::string> asSortedStrings(storm::analysis::ConstraintCollector::C
 
 }  // namespace
 
-class GraphConditionsTest : public ::testing::Test {
+class ConstraintCollectorTest : public ::testing::Test {
    protected:
     void SetUp() override {
 #ifndef STORM_HAVE_Z3
@@ -72,10 +72,10 @@ class GraphConditionsTest : public ::testing::Test {
     }
 };
 
-TEST_F(GraphConditionsTest, PolynomialDenominators) {
+TEST_F(ConstraintCollectorTest, PolynomialDenominators) {
     auto dtmc = buildParametricDtmc(STORM_TEST_RESOURCES_DIR "/pdtmc/only_p.pm", "P=? [F s=1]");
 
-    storm::analysis::ConstraintCollector collector(*dtmc);
+    storm::pars::analysis::ConstraintCollector collector(*dtmc);
 
     // The only parameter must be reported.
     std::vector<storm::RationalFunctionVariable> variables(collector.getVariables().begin(), collector.getVariables().end());
@@ -97,10 +97,10 @@ TEST_F(GraphConditionsTest, PolynomialDenominators) {
     EXPECT_EQ(expectedGraphPreserving, asSortedStrings(collector.getGraphPreservingConstraints()));
 }
 
-TEST_F(GraphConditionsTest, SymbolicDenominators) {
+TEST_F(ConstraintCollectorTest, SymbolicDenominators) {
     auto dtmc = buildParametricDtmc(STORM_TEST_RESOURCES_DIR "/pdtmc/only_rational_denominator.pm", "P=? [F s=2]");
 
-    storm::analysis::ConstraintCollector collector(*dtmc);
+    storm::pars::analysis::ConstraintCollector collector(*dtmc);
 
     std::vector<storm::RationalFunctionVariable> variables(collector.getVariables().begin(), collector.getVariables().end());
     ASSERT_EQ(2ul, variables.size());
@@ -116,15 +116,15 @@ TEST_F(GraphConditionsTest, SymbolicDenominators) {
     EXPECT_EQ(expectedGraphPreserving, asSortedStrings(collector.getGraphPreservingConstraints()));
 }
 
-TEST_F(GraphConditionsTest, ConstraintsAreDeduplicated) {
+TEST_F(ConstraintCollectorTest, ConstraintsAreDeduplicated) {
     auto dtmc = buildParametricDtmc(STORM_TEST_RESOURCES_DIR "/pdtmc/only_p.pm", "P=? [F s=1]");
 
-    storm::analysis::ConstraintCollector collector(*dtmc);
+    storm::pars::analysis::ConstraintCollector collector(*dtmc);
 
     // The same constraint must not be collected twice, even though it can be derived from several transitions.
     // The parametric die model has seven transitions guarded by the same two parameters.
     auto dtmcWithManyTransitions = buildParametricDtmc(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die_2.pm", "P=? [F s=7]");
-    storm::analysis::ConstraintCollector dieCollector(*dtmcWithManyTransitions);
+    storm::pars::analysis::ConstraintCollector dieCollector(*dtmcWithManyTransitions);
 
     for (auto const& constraints : {asSortedStrings(collector.getWellformedConstraints()), asSortedStrings(collector.getGraphPreservingConstraints()),
                                     asSortedStrings(dieCollector.getWellformedConstraints()), asSortedStrings(dieCollector.getGraphPreservingConstraints())}) {
@@ -133,12 +133,12 @@ TEST_F(GraphConditionsTest, ConstraintsAreDeduplicated) {
     }
 }
 
-TEST_F(GraphConditionsTest, ConstraintsAreOrderedDeterministically) {
+TEST_F(ConstraintCollectorTest, ConstraintsAreOrderedDeterministically) {
     auto dtmc = buildParametricDtmc(STORM_TEST_RESOURCES_DIR "/pdtmc/only_p.pm", "P=? [F s=1]");
 
     // Collecting the constraints repeatedly from equal models must yield the same order.
-    storm::analysis::ConstraintCollector firstCollector(*dtmc);
-    storm::analysis::ConstraintCollector secondCollector(*dtmc);
+    storm::pars::analysis::ConstraintCollector firstCollector(*dtmc);
+    storm::pars::analysis::ConstraintCollector secondCollector(*dtmc);
 
     EXPECT_EQ(asStringsInDiscoveryOrder(firstCollector.getWellformedConstraints()), asStringsInDiscoveryOrder(secondCollector.getWellformedConstraints()));
     EXPECT_EQ(asStringsInDiscoveryOrder(firstCollector.getGraphPreservingConstraints()),
@@ -158,10 +158,10 @@ TEST_F(GraphConditionsTest, ConstraintsAreOrderedDeterministically) {
     EXPECT_NE(expectedWellformed, sortedWellformed);
 }
 
-TEST_F(GraphConditionsTest, ExportToFile) {
+TEST_F(ConstraintCollectorTest, ExportToFile) {
     auto dtmc = buildParametricDtmc(STORM_TEST_RESOURCES_DIR "/pdtmc/only_rational_denominator.pm", "P=? [F s=2]");
 
-    storm::analysis::ConstraintCollector collector(*dtmc);
+    storm::pars::analysis::ConstraintCollector collector(*dtmc);
 
     // Use one of the model's symbolic transition values as the solution function.
     storm::RationalFunction resultValue = storm::utility::zero<storm::RationalFunction>();
