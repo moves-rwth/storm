@@ -15,6 +15,7 @@
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/storage/jani/Property.h"
+#include "test/SmtSolverTestUtils.h"
 
 class SparseMaCbMultiObjectiveModelCheckerTest : public ::testing::Test {
    protected:
@@ -52,11 +53,13 @@ TEST_F(SparseMaCbMultiObjectiveModelCheckerTest, server) {
     EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-#ifdef STORM_HAVE_Z3
-TEST_F(SparseMaCbMultiObjectiveModelCheckerTest, serverWithSolverFromEnvironment) {
+// Checks the constraint-based approach once per available SMT solver, which is selected via the environment.
+class SparseMaCbMultiObjectiveModelCheckerSmtTest : public ::testing::TestWithParam<storm::solver::SmtSolverType> {};
+
+TEST_P(SparseMaCbMultiObjectiveModelCheckerSmtTest, serverWithSolverFromEnvironment) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::ConstraintBased);
-    env.solver().setSmtSolverType(storm::solver::SmtSolverType::Z3);
+    env.solver().setSmtSolverType(GetParam());
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
     std::string formulasAsString = "multi(T>=5/3 [ F \"error\" ], P>=7/12 [ F \"processB\" ]) ";  // true
@@ -80,4 +83,8 @@ TEST_F(SparseMaCbMultiObjectiveModelCheckerTest, serverWithSolverFromEnvironment
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
     EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
 }
-#endif
+
+INSTANTIATE_TEST_SUITE_P(SmtSolvers, SparseMaCbMultiObjectiveModelCheckerSmtTest, ::testing::ValuesIn(storm::test::smtSolversUnderTest()),
+                         storm::test::smtSolverName);
+// The suite is empty if no SMT solver was compiled in.
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(SparseMaCbMultiObjectiveModelCheckerSmtTest);
