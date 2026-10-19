@@ -5,6 +5,19 @@ This changelog lists only the most important changes. Smaller (bug)fixes as well
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
 
+Version 2.0.x
+-------------
+
+### Version 2.0.0 (unreleased)
+- Developer: Restructured the `storage` directory. Include paths changed as follows:
+    * `storm/storage/jani/` -> `storm/languages/jani/`
+    * `storm/storage/prism/` -> `storm/languages/prism/`
+    * `storm/storage/umb/model/` -> `storm/languages/umb/`
+    * `storm/storage/umb/` -> `storm/io/umb/`
+    * `storm/storage/dd/bisimulation/` -> `storm/transformer/bisimulation/dd/`
+    * `storm-cli-utilities/Qvbs.h` -> `storm/io/Qvbs.h` (class `QvbsBenchmark` moved to namespace `storm::io`)
+
+
 Version 1.14.x
 --------------
 
