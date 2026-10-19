@@ -9,6 +9,7 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
@@ -22,7 +23,6 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/languages/jani/Property.h"
 
 namespace {
 

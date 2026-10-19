@@ -6,9 +6,9 @@
 #include "storm/languages/jani/traverser/AssignmentsFinder.h"
 
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/languages/jani/expressions/JaniExpressions.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"
-#include "storm/languages/jani/expressions/JaniExpressions.h"
 
 namespace storm {
 

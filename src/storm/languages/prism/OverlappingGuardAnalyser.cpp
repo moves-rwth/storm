@@ -1,6 +1,6 @@
 #include "storm/languages/prism/OverlappingGuardAnalyser.h"
-#include "storm/solver/SmtSolver.h"
 #include "storm/languages/prism/Program.h"
+#include "storm/solver/SmtSolver.h"
 
 namespace storm {
 namespace prism {

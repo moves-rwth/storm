@@ -2,7 +2,6 @@
 
 #include <unordered_map>
 
-#include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/languages/jani/Variable.h"
@@ -10,6 +9,7 @@
 #include "storm/languages/jani/traverser/FunctionCallExpressionFinder.h"
 #include "storm/languages/jani/traverser/JaniTraverser.h"
 #include "storm/languages/jani/visitor/JaniExpressionVisitor.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"

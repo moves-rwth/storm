@@ -1,8 +1,8 @@
 #include "storm/logic/LiftableTransitionRewardsVisitor.h"
 #include <boost/any.hpp>
 
-#include "storm/logic/Formulas.h"
 #include "storm/languages/jani/traverser/RewardModelInformation.h"
+#include "storm/logic/Formulas.h"
 
 namespace storm {
 namespace logic {

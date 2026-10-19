@@ -2,8 +2,8 @@
 
 #include <boost/variant.hpp>
 
-#include "storm/storage/expressions/Variable.h"
 #include "storm/languages/jani/Variable.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace expressions {

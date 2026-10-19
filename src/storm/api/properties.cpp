@@ -2,11 +2,11 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "storm/logic/Formula.h"
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/languages/prism/Program.h"
+#include "storm/logic/Formula.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
 namespace storm {
 namespace api {

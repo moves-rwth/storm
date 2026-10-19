@@ -6,9 +6,6 @@
 #include <set>
 #include <vector>
 
-#include "storm/storage/BitVector.h"
-#include "storm/storage/BoostTypes.h"
-#include "storm/storage/PlayerIndex.h"
 #include "storm/languages/prism/Composition.h"
 #include "storm/languages/prism/Constant.h"
 #include "storm/languages/prism/Formula.h"
@@ -18,6 +15,9 @@
 #include "storm/languages/prism/Player.h"
 #include "storm/languages/prism/RewardModel.h"
 #include "storm/languages/prism/SystemCompositionConstruct.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/BoostTypes.h"
+#include "storm/storage/PlayerIndex.h"
 #include "storm/utility/solver.h"
 
 namespace storm {

@@ -6,8 +6,8 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/storage/BitVector.h"
 #include "storm/languages/umb/FileTypes.h"
+#include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

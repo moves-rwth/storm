@@ -1,9 +1,9 @@
 #pragma once
 
 #include "storm-gspn/storage/gspn/GSPN.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace builder {

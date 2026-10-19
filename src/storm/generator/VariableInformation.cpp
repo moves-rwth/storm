@@ -3,11 +3,11 @@
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/prism/Program.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/languages/jani/Automaton.h"
 #include "storm/languages/jani/AutomatonComposition.h"
 #include "storm/languages/jani/ParallelComposition.h"
 #include "storm/languages/jani/eliminator/ArrayEliminator.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"

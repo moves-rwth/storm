@@ -1,7 +1,7 @@
 #include "storm/languages/jani/expressions/FunctionCallExpression.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/languages/jani/visitor/JaniExpressionVisitor.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"

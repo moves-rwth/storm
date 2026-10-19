@@ -2,6 +2,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
@@ -17,7 +18,6 @@
 #include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/languages/jani/Property.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

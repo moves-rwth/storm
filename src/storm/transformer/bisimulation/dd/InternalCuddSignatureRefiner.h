@@ -10,8 +10,8 @@
 #include <set>
 
 #include "storm/storage/dd/Bdd.h"
-#include "storm/transformer/bisimulation/dd/InternalSignatureRefiner.h"
 #include "storm/storage/dd/cudd/utility.h"
+#include "storm/transformer/bisimulation/dd/InternalSignatureRefiner.h"
 
 namespace storm {
 namespace dd {

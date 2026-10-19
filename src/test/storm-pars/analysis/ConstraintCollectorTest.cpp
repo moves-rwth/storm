@@ -15,8 +15,8 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/generator/NextStateGenerator.h"
 #include "storm/io/file.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/languages/jani/Property.h"
+#include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/constants.h"
 
 namespace {

@@ -1,8 +1,8 @@
 #include "storm/exceptions/UnexpectedException.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/languages/jani/expressions/TranscendentalNumberLiteralExpression.h"
 #include "storm/languages/jani/visitor/JaniExpressionVisitor.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/utility/constants.h"
 

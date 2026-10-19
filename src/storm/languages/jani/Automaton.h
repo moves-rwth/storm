@@ -5,11 +5,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm/storage/BoostTypes.h"
 #include "storm/languages/jani/EdgeContainer.h"
 #include "storm/languages/jani/FunctionDefinition.h"
 #include "storm/languages/jani/TemplateEdgeContainer.h"
 #include "storm/languages/jani/VariableSet.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
 namespace jani {

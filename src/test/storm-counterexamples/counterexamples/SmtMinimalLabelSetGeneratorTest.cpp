@@ -11,8 +11,8 @@
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/environment/Environment.h"
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/languages/jani/Model.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
 namespace {
 

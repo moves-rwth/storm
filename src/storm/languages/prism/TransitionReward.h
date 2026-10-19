@@ -2,8 +2,8 @@
 
 #include <map>
 
-#include "storm/storage/expressions/Expression.h"
 #include "storm/languages/prism/LocatedInformation.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace storage {

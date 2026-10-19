@@ -2,10 +2,10 @@
 
 #include <boost/graph/strong_components.hpp>
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/languages/jani/localeliminator/EliminateAutomaticallyAction.h"
 #include "storm/languages/jani/localeliminator/RebuildWithoutUnreachableAction.h"
 #include "storm/languages/jani/localeliminator/UnfoldAction.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace jani {

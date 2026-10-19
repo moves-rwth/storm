@@ -5,9 +5,9 @@
 #include <boost/optional.hpp>
 #include <iostream>
 
-#include "storm/storage/BoostTypes.h"
 #include "storm/languages/jani/EdgeDestination.h"
 #include "storm/languages/jani/OrderedAssignments.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
 namespace jani {

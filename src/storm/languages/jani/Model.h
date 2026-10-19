@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "Composition.h"
-#include "storm/storage/BoostTypes.h"
 #include "storm/languages/jani/Action.h"
 #include "storm/languages/jani/Automaton.h"
 #include "storm/languages/jani/Constant.h"
@@ -14,6 +13,7 @@
 #include "storm/languages/jani/ModelType.h"
 #include "storm/languages/jani/TemplateEdge.h"
 #include "storm/languages/jani/VariableSet.h"
+#include "storm/storage/BoostTypes.h"
 #include "storm/utility/solver.h"
 
 namespace storm {

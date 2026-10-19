@@ -3,8 +3,8 @@
 #include <map>
 #include <set>
 #include <vector>
-#include "storm/storage/expressions/Expression.h"
 #include "storm/languages/jani/TemplateEdgeContainer.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace jani {

@@ -3,10 +3,10 @@
 #include <boost/optional.hpp>
 #include <unordered_map>
 
-#include "storm/logic/CloneVisitor.h"
-#include "storm/logic/RewardAccumulation.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
+#include "storm/logic/CloneVisitor.h"
+#include "storm/logic/RewardAccumulation.h"
 
 namespace storm {
 namespace logic {

@@ -16,9 +16,9 @@
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
 
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/print.h"

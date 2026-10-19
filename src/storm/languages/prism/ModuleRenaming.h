@@ -6,11 +6,11 @@
 #include <string>
 #include <vector>
 
-#include "storm/storage/BoostTypes.h"
 #include "storm/languages/prism/BooleanVariable.h"
 #include "storm/languages/prism/ClockVariable.h"
 #include "storm/languages/prism/Command.h"
 #include "storm/languages/prism/IntegerVariable.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
 namespace prism {

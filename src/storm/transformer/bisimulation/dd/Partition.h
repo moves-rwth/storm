@@ -8,8 +8,8 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
-#include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
 #include "storm/transformer/bisimulation/BisimulationType.h"
+#include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
 
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/NondeterministicModel.h"

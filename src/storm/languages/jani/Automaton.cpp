@@ -1,11 +1,11 @@
 #include "storm/languages/jani/Automaton.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/languages/jani/Edge.h"
 #include "storm/languages/jani/Location.h"
 #include "storm/languages/jani/TemplateEdge.h"
 #include "storm/languages/jani/types/AllJaniTypes.h"
 #include "storm/languages/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"

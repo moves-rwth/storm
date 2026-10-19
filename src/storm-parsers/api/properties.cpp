@@ -4,12 +4,12 @@
 #include "storm/api/properties.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
-#include "storm/logic/Formula.h"
-#include "storm/logic/RewardAccumulationEliminationVisitor.h"
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/languages/prism/Program.h"
+#include "storm/logic/Formula.h"
+#include "storm/logic/RewardAccumulationEliminationVisitor.h"
+#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/utility/string.h"
 
 namespace storm {

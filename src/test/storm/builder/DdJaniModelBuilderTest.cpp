@@ -7,6 +7,7 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdJaniModelBuilder.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/languages/jani/Compositions.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
@@ -14,7 +15,6 @@
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
-#include "storm/languages/jani/Compositions.h"
 
 namespace {
 

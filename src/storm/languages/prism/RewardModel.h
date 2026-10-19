@@ -4,10 +4,10 @@
 #include <string>
 #include <vector>
 
-#include "storm/storage/BoostTypes.h"
 #include "storm/languages/prism/StateActionReward.h"
 #include "storm/languages/prism/StateReward.h"
 #include "storm/languages/prism/TransitionReward.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
 namespace prism {

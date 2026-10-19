@@ -1,8 +1,8 @@
 #pragma once
 
 #include "storm/environment/Environment.h"
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/languages/jani/ModelFeatures.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "storm-parsers/storm-parsers-api.h"
-#include "storm/storage/expressions/Expression.h"
 #include "storm/languages/jani/Property.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace prism {

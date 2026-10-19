@@ -2,9 +2,9 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/transformer/bisimulation/dd/Partition.h"
 #include "storm/transformer/bisimulation/dd/Signature.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 #ifdef STORM_HAVE_SYLVAN
 #include "sylvan_cache.h"

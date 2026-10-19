@@ -6,10 +6,10 @@
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/languages/prism/Command.h"
 #include "storm/languages/prism/Update.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 

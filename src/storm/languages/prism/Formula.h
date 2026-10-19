@@ -3,9 +3,9 @@
 #include <boost/optional.hpp>
 #include <map>
 
+#include "storm/languages/prism/LocatedInformation.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
-#include "storm/languages/prism/LocatedInformation.h"
 
 namespace storm {
 namespace prism {

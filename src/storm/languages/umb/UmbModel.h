@@ -6,10 +6,10 @@
 #include <memory>
 #include <string>
 
-#include "storm/storage/BitVector.h"
 #include "storm/languages/umb/FileTypes.h"
 #include "storm/languages/umb/GenericVector.h"
 #include "storm/languages/umb/ModelIndex.h"
+#include "storm/storage/BitVector.h"
 #include "storm/utility/OptionalRef.h"
 
 namespace storm::umb {

@@ -2,14 +2,14 @@
 #include "storm-parsers/storm-parsers-api.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/FileIoException.h"
-#include "storm/logic/Bound.h"
-#include "storm/logic/Formula.h"
-#include "storm/logic/RewardAccumulation.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/languages/jani/Constant.h"
 #include "storm/languages/jani/FunctionDefinition.h"
 #include "storm/languages/jani/LValue.h"
 #include "storm/languages/jani/expressions/ValueArrayExpression.h"
+#include "storm/logic/Bound.h"
+#include "storm/logic/Formula.h"
+#include "storm/logic/RewardAccumulation.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace jani {

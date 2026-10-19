@@ -7,8 +7,8 @@
 
 #include "storm-parsers/parser/SpiritErrorHandler.h"
 #include "storm-parsers/parser/SpiritParserDefinitions.h"
-#include "storm/storage/expressions/Expression.h"
 #include "storm/languages/prism/Program.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace expressions {

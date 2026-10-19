@@ -4,10 +4,10 @@
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/logic/Formulas.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/ModelType.h"
 #include "storm/languages/jani/Property.h"
+#include "storm/logic/Formulas.h"
 
 TEST(JaniParser, DieExampleTest) {
     std::string testInput = R"({

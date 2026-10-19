@@ -4,10 +4,10 @@
 #include <map>
 #include <set>
 
-#include "storm/storage/expressions/Variable.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/languages/jani/traverser/JaniTraverser.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace jani {
