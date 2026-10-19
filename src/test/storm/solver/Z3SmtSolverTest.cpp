@@ -3,6 +3,7 @@
 
 #ifdef STORM_HAVE_Z3
 #include "storm/solver/Z3SmtSolver.h"
+#include "test/storm/solver/SmtSolverTimeoutTestUtils.h"
 
 TEST(Z3SmtSolver, CheckSat) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -215,6 +216,12 @@ TEST(Z3SmtSolver, UnsatAssumptions) {
     ASSERT_EQ(1ull, unsatCore.size());
     ASSERT_TRUE(unsatCore[0].isVariable());
     ASSERT_STREQ("f2", unsatCore[0].getIdentifier().c_str());
+}
+
+TEST(Z3SmtSolver, Timeout) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::solver::Z3SmtSolver s(*manager);
+    storm::test::checkSmtSolverTimeout(s, *manager);
 }
 
 #endif
