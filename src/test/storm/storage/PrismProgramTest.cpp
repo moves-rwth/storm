@@ -36,7 +36,7 @@ TEST_P(PrismProgramFlattenTest, Csma) {
     flattenAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/csma2_2.nm", 70ull);
 }
 
-TEST_P(PrismProgramFlattenTest, Firewire) {
+STORM_EXPENSIVE_TEST_P(PrismProgramFlattenTest, Firewire) {
     flattenAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/firewire.nm", 5024ull);
 }
 

@@ -37,7 +37,7 @@ TEST_P(JaniModelFlattenTest, Csma) {
     flattenAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/csma2_2.nm", 70ull);
 }
 
-TEST_P(JaniModelFlattenTest, Firewire) {
+STORM_EXPENSIVE_TEST_P(JaniModelFlattenTest, Firewire) {
     flattenAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/firewire.nm", 5024ull);
 }
 
