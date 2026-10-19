@@ -14,16 +14,16 @@ namespace helper {
  * Unlike its MDP counterpart it carries no scheduler, as such a model has no nondeterminism to resolve.
  */
 template<typename ValueType>
-struct DeterministicSparseModelCheckingHelperReturnType {
-    DeterministicSparseModelCheckingHelperReturnType(DeterministicSparseModelCheckingHelperReturnType const&) = delete;
-    DeterministicSparseModelCheckingHelperReturnType(DeterministicSparseModelCheckingHelperReturnType&&) = default;
-    DeterministicSparseModelCheckingHelperReturnType& operator=(DeterministicSparseModelCheckingHelperReturnType&&) = default;
+struct SparseDeterministicModelCheckingHelperReturnType {
+    SparseDeterministicModelCheckingHelperReturnType(SparseDeterministicModelCheckingHelperReturnType const&) = delete;
+    SparseDeterministicModelCheckingHelperReturnType(SparseDeterministicModelCheckingHelperReturnType&&) = default;
+    SparseDeterministicModelCheckingHelperReturnType& operator=(SparseDeterministicModelCheckingHelperReturnType&&) = default;
 
-    explicit DeterministicSparseModelCheckingHelperReturnType(std::vector<ValueType>&& values) : values(std::move(values)) {
+    explicit SparseDeterministicModelCheckingHelperReturnType(std::vector<ValueType>&& values) : values(std::move(values)) {
         // Intentionally left empty.
     }
 
-    virtual ~DeterministicSparseModelCheckingHelperReturnType() {
+    virtual ~SparseDeterministicModelCheckingHelperReturnType() {
         // Intentionally left empty.
     }
 
