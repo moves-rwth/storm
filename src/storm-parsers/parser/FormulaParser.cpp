@@ -4,7 +4,7 @@
 
 #include "storm-parsers/parser/SpiritErrorHandler.h"
 
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 #include "storm/logic/Formulas.h"
 

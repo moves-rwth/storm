@@ -9,7 +9,7 @@
 #include "storm/languages/jani/localeliminator/AutomaticAction.h"
 #include "storm/languages/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/languages/jani/visitor/JSONExporter.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 namespace storm {
 namespace api {

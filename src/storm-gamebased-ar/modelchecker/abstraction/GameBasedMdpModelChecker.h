@@ -4,7 +4,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/Odd.h"

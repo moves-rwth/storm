@@ -21,7 +21,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/utility/constants.h"
 
 void testModel(std::string programFile, std::string formulaAsString, std::string constantsAsString) {

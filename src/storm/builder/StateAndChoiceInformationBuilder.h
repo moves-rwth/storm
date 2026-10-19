@@ -9,7 +9,7 @@
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/PlayerIndex.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/storage/valuations/Valuations.h"
 

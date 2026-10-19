@@ -15,8 +15,8 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/storage/prism/Compositions.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Compositions.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/utility/dd.h"
 
 namespace storm {

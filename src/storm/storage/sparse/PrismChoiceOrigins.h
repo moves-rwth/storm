@@ -4,7 +4,7 @@
 #include <string>
 
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 
 namespace storm {

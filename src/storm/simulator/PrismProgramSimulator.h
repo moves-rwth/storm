@@ -4,7 +4,7 @@
 
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/storage/expressions/SimpleValuation.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/utility/random.h"
 
 namespace storm {

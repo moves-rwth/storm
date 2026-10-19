@@ -6,7 +6,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/storage/prism/Module.h"
+#include "storm/languages/prism/Module.h"
 #include "storm/utility/macros.h"
 
 namespace storm::gbar {

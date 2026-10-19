@@ -8,8 +8,8 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/storage/prism/Command.h"
-#include "storm/storage/prism/Update.h"
+#include "storm/languages/prism/Command.h"
+#include "storm/languages/prism/Update.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 

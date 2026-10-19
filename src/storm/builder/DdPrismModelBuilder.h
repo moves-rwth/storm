@@ -4,7 +4,7 @@
 #include <boost/variant.hpp>
 #include <map>
 
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 #include "storm/builder/TerminalStatesGetter.h"
 

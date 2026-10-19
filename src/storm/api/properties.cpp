@@ -6,7 +6,7 @@
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 namespace storm {
 namespace api {

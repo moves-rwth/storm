@@ -1,7 +1,7 @@
 #include "storm-parsers/parser/PrismParserGrammar.h"
 
 #include <unordered_set>
-#include "storm/storage/prism/Compositions.h"
+#include "storm/languages/prism/Compositions.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
