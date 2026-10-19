@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "storm-pars/analysis/ConstraintCollector.h"
 #include "storm-pars/storage/ParameterRegion.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/Expression.h"
 
@@ -60,7 +60,7 @@ struct RegionCheckResult {
  */
 class RegionConstraintChecker {
    public:
-    explicit RegionConstraintChecker(storm::analysis::ConstraintCollector const& collector);
+    explicit RegionConstraintChecker(storm::pars::analysis::ConstraintCollector const& collector);
 
     RegionCheckResult checkWellformedness(RationalFunctionRegion const& region) const;
 
@@ -76,11 +76,11 @@ class RegionConstraintChecker {
     /*!
      * Checks an arbitrary constraint set over a region. The label is used in exception messages.
      */
-    static RegionCheckResult checkConstraints(storm::analysis::ConstraintCollector::ConstraintSet const& constraints, RationalFunctionRegion const& region,
-                                              std::string const& label);
+    static RegionCheckResult checkConstraints(storm::pars::analysis::ConstraintCollector::ConstraintSet const& constraints,
+                                              RationalFunctionRegion const& region, std::string const& label);
 
    private:
-    storm::analysis::ConstraintCollector const& collector;
+    storm::pars::analysis::ConstraintCollector const& collector;
 };
 
 }  // namespace storm::pars::analysis

@@ -4,10 +4,10 @@
 #include <memory>
 #include <string>
 
+#include "storm-pars/analysis/ConstraintCollector.h"
 #include "storm-pars/analysis/RegionConstraintChecker.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/api/properties.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -20,7 +20,7 @@
 namespace {
 
 using Checker = storm::pars::analysis::RegionConstraintChecker;
-using ConstraintSet = storm::analysis::ConstraintCollector::ConstraintSet;
+using ConstraintSet = storm::pars::analysis::ConstraintCollector::ConstraintSet;
 using Region = storm::pars::analysis::RationalFunctionRegion;
 using CoefficientType = storm::pars::analysis::CoefficientType;
 
@@ -250,7 +250,7 @@ TEST(RegionConstraintCheckerTest, RealModelConstraintsAreDecidedExactly) {
     auto model =
         storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    storm::analysis::ConstraintCollector collector(*model);
+    storm::pars::analysis::ConstraintCollector collector(*model);
     EXPECT_FALSE(collector.getWellformedConstraints().empty());
     EXPECT_FALSE(collector.getGraphPreservingConstraints().empty());
     Checker checker(collector);
@@ -305,7 +305,7 @@ TEST(RegionConstraintCheckerTest, NonAffineModelConstraintsAreNeverClaimedToHold
     auto model =
         storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    storm::analysis::ConstraintCollector collector(*model);
+    storm::pars::analysis::ConstraintCollector collector(*model);
     Checker checker(collector);
 
     // This model yields piecewise, non-affine constraints. The checker must not claim that they hold.

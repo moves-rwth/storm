@@ -10,6 +10,7 @@
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 #include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
 
+#include "storm-pars/analysis/ConstraintCollector.h"
 #include "storm-pomdp/analysis/FiniteBeliefMdpDetection.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/IterativePolicySearch.h"
@@ -30,7 +31,6 @@
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
 #include "storm-pomdp/transformer/RewardBoundUnfolder.h"
 #include "storm-pomdp/transformer/ToStateBasedObservationTransformer.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/api/storm.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -667,7 +667,7 @@ bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueTyp
             pmc->printModelInformationToStream(std::cout);
         }
         STORM_PRINT_AND_LOG("Exporting pMC...");
-        storm::analysis::ConstraintCollector constraints(*pmc);
+        storm::pars::analysis::ConstraintCollector constraints(*pmc);
         auto const& parameterSet = constraints.getVariables();
         std::vector<storm::RationalFunctionVariable> parameters(parameterSet.begin(), parameterSet.end());
         std::vector<std::string> parameterNames;

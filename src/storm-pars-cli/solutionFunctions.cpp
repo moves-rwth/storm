@@ -3,9 +3,9 @@
 #include "storm-cli-utilities/SettingsUtils.h"
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/print.h"
+#include "storm-pars/analysis/ConstraintCollector.h"
 #include "storm-pars/api/export.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/api/verification.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -78,13 +78,13 @@ void computeSolutionFunctionsWithSparseEngine(storm::Environment const& env, std
                 auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
                 std::optional<ValueType> rationalFunction =
                     asSolutionFunction<ValueType>(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
-                auto constraintCollector = storm::analysis::ConstraintCollector(*dtmc);
+                auto constraintCollector = storm::pars::analysis::ConstraintCollector(*dtmc);
                 api::exportParametricResultToFile<ValueType>(rationalFunction, constraintCollector, parametricSettings.exportResultPath());
             } else if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Ctmc)) {
                 auto ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
                 std::optional<ValueType> rationalFunction =
                     asSolutionFunction<ValueType>(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
-                auto constraintCollector = storm::analysis::ConstraintCollector(*ctmc);
+                auto constraintCollector = storm::pars::analysis::ConstraintCollector(*ctmc);
                 api::exportParametricResultToFile<ValueType>(rationalFunction, constraintCollector, parametricSettings.exportResultPath());
             }
         });

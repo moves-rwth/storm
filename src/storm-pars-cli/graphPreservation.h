@@ -7,11 +7,11 @@
 #include <type_traits>
 #include <vector>
 
+#include "storm-pars/analysis/ConstraintCollector.h"
 #include "storm-pars/analysis/GraphPreservationStatus.h"
 #include "storm-pars/analysis/RegionConstraintChecker.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm-pars/storage/ParameterRegion.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -26,11 +26,11 @@ namespace storm::pars {
  * Collects the constraints of the model. Returns std::nullopt if the model is not a sparse parametric model.
  */
 template<typename ValueType>
-std::optional<storm::analysis::ConstraintCollector> collectConstraints(std::shared_ptr<storm::models::ModelBase> const& model) {
+std::optional<storm::pars::analysis::ConstraintCollector> collectConstraints(std::shared_ptr<storm::models::ModelBase> const& model) {
     if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
         if (model && model->isSparseModel()) {
             try {
-                return storm::analysis::ConstraintCollector(*model->template as<storm::models::sparse::Model<ValueType>>());
+                return storm::pars::analysis::ConstraintCollector(*model->template as<storm::models::sparse::Model<ValueType>>());
             } catch (storm::exceptions::BaseException const& exception) {
                 STORM_LOG_WARN("Could not collect the constraints of the model; they will be treated as undecided: " << exception.what());
             }
@@ -45,7 +45,7 @@ std::optional<storm::analysis::ConstraintCollector> collectConstraints(std::shar
  * Returns std::nullopt if they cannot be checked, e.g. if the region does not cover all constrained variables.
  */
 template<typename ValueType>
-std::optional<storm::pars::analysis::RegionCheckResult> checkRegionConstraints(std::optional<storm::analysis::ConstraintCollector> const& collector,
+std::optional<storm::pars::analysis::RegionCheckResult> checkRegionConstraints(std::optional<storm::pars::analysis::ConstraintCollector> const& collector,
                                                                                storm::storage::ParameterRegion<ValueType> const& region, bool wellformedness) {
     if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
         if (collector) {

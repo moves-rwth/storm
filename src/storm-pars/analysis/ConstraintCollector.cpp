@@ -1,4 +1,4 @@
-#include "storm/analysis/GraphConditions.h"
+#include "storm-pars/analysis/ConstraintCollector.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
@@ -9,8 +9,7 @@
 #include "storm/storage/expressions/PolynomialToExpression.h"
 #include "storm/utility/constants.h"
 
-namespace storm {
-namespace analysis {
+namespace storm::pars::analysis {
 
 namespace {
 
@@ -208,5 +207,4 @@ void ConstraintCollector::operator()(storm::models::sparse::Model<storm::Rationa
     process(model);
 }
 
-}  // namespace analysis
-}  // namespace storm
+}  // namespace storm::pars::analysis
