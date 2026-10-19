@@ -8,11 +8,11 @@
 #include "storm-config.h"
 #include "storm/adapters/sylvan.h"
 #include "storm/exceptions/MissingLibraryException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/InternalBdd.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace storage {

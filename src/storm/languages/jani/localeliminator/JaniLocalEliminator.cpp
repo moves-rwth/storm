@@ -1,11 +1,11 @@
 #include "storm/languages/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/languages/jani/AutomatonComposition.h"
 #include "storm/languages/jani/localeliminator/AutomaticAction.h"
 #include "storm/languages/jani/localeliminator/FinishAction.h"
 #include "storm/solver/Z3SmtSolver.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 

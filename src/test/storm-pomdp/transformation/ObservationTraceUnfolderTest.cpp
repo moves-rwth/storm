@@ -7,8 +7,8 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm-pomdp/transformer/ObservationTraceUnfolder.h"
 #include "storm/api/storm.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 
 TEST(ObservationTraceUnfolder, Simple) {

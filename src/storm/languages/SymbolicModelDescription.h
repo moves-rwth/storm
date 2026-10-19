@@ -3,10 +3,10 @@
 #include <boost/variant.hpp>
 #include <map>
 
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/prism/Program.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace languages {

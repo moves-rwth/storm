@@ -1,8 +1,8 @@
 #include "storm/languages/jani/LValue.h"
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/languages/jani/visitor/JaniSyntacticalEqualityCheckVisitor.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

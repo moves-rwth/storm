@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "storm/expressions/Expression.h"
 #include "storm/languages/prism/Update.h"
-#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace prism {

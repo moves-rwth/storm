@@ -1,6 +1,6 @@
 #include "storm/languages/prism/ToJaniConverter.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"

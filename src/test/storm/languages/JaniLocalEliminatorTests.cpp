@@ -7,6 +7,8 @@
 #include "storm/api/storm.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/environment/Environment.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/ModelFeatures.h"
 #include "storm/languages/jani/Property.h"
@@ -17,8 +19,6 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
 
 typedef storm::models::sparse::Dtmc<double> Dtmc;
 typedef storm::models::sparse::Mdp<double> Mdp;

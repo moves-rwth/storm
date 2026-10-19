@@ -7,8 +7,8 @@
 #include <utility>
 
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/storage/expressions/Expressions.h"
-#include "storm/storage/expressions/LinearCoefficientVisitor.h"
+#include "storm/expressions/Expressions.h"
+#include "storm/expressions/LinearCoefficientVisitor.h"
 #include "storm/utility/constants.h"
 
 namespace storm::pars::analysis {

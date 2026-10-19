@@ -4,11 +4,11 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/verification.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/languages/SymbolicModelDescription.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace pomdp {

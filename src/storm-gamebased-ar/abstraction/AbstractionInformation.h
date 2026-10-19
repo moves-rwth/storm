@@ -11,7 +11,7 @@
 
 #include "storm/solver/SmtSolver.h"
 
-#include "storm/storage/expressions/EquivalenceChecker.h"
+#include "storm/expressions/EquivalenceChecker.h"
 
 namespace storm {
 namespace expressions {

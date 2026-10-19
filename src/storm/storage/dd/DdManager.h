@@ -5,6 +5,7 @@
 #include <set>
 #include <unordered_map>
 
+#include "storm/expressions/Variable.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdMetaVariable.h"
@@ -12,7 +13,6 @@
 #include "storm/storage/dd/InternalDdManager.h"
 #include "storm/storage/dd/cudd/InternalCuddDdManager.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 class Environment;

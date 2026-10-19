@@ -1,9 +1,9 @@
 #include "storm/languages/jani/traverser/RewardModelInformation.h"
 
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
 #include "storm/utility/constants.h"
 
 namespace storm {

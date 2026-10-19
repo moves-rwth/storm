@@ -4,7 +4,7 @@
 
 #include "storm-gamebased-ar/abstraction/jani/EdgeAbstractor.h"
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 #include "storm/utility/solver.h"
 

@@ -9,7 +9,7 @@
 #include "storm-gamebased-ar/abstraction/MenuGame.h"
 #include "storm-gamebased-ar/abstraction/RefinementCommand.h"
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 namespace storm {
 namespace dd {

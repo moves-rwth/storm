@@ -8,8 +8,8 @@
 
 #include "storm-config.h"
 #include "storm/adapters/cudd.h"
+#include "storm/expressions/SimpleValuation.h"
 #include "storm/storage/dd/AddIterator.h"
-#include "storm/storage/expressions/SimpleValuation.h"
 
 namespace storm {
 namespace dd {

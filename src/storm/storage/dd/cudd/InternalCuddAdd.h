@@ -9,10 +9,10 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/cudd.h"
+#include "storm/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/Odd.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace storage {

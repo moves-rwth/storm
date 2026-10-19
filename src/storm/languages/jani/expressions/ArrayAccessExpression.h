@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/expressions/BinaryExpression.h"
+#include "storm/expressions/BinaryExpression.h"
 
 namespace storm {
 namespace expressions {

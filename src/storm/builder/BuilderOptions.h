@@ -7,8 +7,8 @@
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
+#include "storm/expressions/Expression.h"
 #include "storm/languages/SymbolicModelDescription.h"
-#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace expressions {

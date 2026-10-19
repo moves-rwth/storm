@@ -5,7 +5,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/Environment.h"
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 

@@ -2,17 +2,17 @@
 
 #include <unordered_map>
 
+#include "storm/expressions/ExpressionVisitor.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/languages/jani/Variable.h"
 #include "storm/languages/jani/traverser/ArrayExpressionFinder.h"
 #include "storm/languages/jani/traverser/JaniTraverser.h"
 #include "storm/languages/jani/visitor/JaniExpressionVisitor.h"
-#include "storm/storage/expressions/ExpressionVisitor.h"
 
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Expressions.h"
 #include "storm/languages/jani/expressions/JaniExpressions.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Expressions.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"

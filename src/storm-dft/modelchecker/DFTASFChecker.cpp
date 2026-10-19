@@ -6,10 +6,10 @@
 #include "storm-parsers/parser/ExpressionCreator.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Type.h"
 #include "storm/io/file.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Type.h"
 #include "storm/utility/bitoperations.h"
 
 namespace storm::dft {

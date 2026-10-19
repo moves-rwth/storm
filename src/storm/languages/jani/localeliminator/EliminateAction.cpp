@@ -2,7 +2,7 @@
 #include <boost/format.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace jani {

@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "storm/storage/expressions/BaseExpression.h"
+#include "storm/expressions/BaseExpression.h"
 
 namespace storm {
 namespace expressions {

@@ -11,7 +11,7 @@
 
 #include "storm/storage/dd/Add.h"
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 namespace storm {
 namespace utility {

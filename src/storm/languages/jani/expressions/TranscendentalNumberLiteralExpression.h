@@ -1,7 +1,7 @@
 #pragma once
 
-#include "storm/storage/expressions/BaseExpression.h"
-#include "storm/storage/expressions/RationalLiteralExpression.h"
+#include "storm/expressions/BaseExpression.h"
+#include "storm/expressions/RationalLiteralExpression.h"
 
 namespace storm {
 namespace expressions {

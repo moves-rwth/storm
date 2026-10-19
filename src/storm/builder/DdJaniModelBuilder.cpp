@@ -10,6 +10,8 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Variable.h"
 #include "storm/languages/jani/Automaton.h"
 #include "storm/languages/jani/AutomatonComposition.h"
 #include "storm/languages/jani/Edge.h"
@@ -29,8 +31,6 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Variable.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 

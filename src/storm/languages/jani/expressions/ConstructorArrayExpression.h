@@ -1,7 +1,7 @@
 #pragma once
 
+#include "storm/expressions/Variable.h"
 #include "storm/languages/jani/expressions/ArrayExpression.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace expressions {

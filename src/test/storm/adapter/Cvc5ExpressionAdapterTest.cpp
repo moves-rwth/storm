@@ -3,11 +3,11 @@
 
 #ifdef STORM_HAVE_CVC5
 #include "storm/adapters/Cvc5ExpressionAdapter.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/IntegerLiteralExpression.h"
-#include "storm/storage/expressions/OperatorType.h"
-#include "storm/storage/expressions/RationalLiteralExpression.h"
-#include "storm/storage/expressions/VariableExpression.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/IntegerLiteralExpression.h"
+#include "storm/expressions/OperatorType.h"
+#include "storm/expressions/RationalLiteralExpression.h"
+#include "storm/expressions/VariableExpression.h"
 
 namespace {
 /*!

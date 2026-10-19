@@ -1,5 +1,5 @@
 #include "RebuildWithoutUnreachableAction.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 

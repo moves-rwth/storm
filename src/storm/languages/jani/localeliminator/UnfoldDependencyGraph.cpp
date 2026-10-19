@@ -3,7 +3,7 @@
 #include <boost/graph/strong_components.hpp>
 #include <utility>
 #include "storm/exceptions/InvalidOperationException.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace jani {

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 #include "storm/languages/jani/TemplateEdgeDestination.h"
 

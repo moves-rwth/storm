@@ -11,10 +11,10 @@
 #include "storm/api/properties.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/generator/NextStateGenerator.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 
 namespace {

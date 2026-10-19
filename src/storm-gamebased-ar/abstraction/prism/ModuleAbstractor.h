@@ -4,7 +4,7 @@
 
 #include "storm-gamebased-ar/abstraction/prism/CommandAbstractor.h"
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 #include "storm/utility/solver.h"
 

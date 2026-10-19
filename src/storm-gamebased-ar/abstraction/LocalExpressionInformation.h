@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 
 #include "storm/storage/dd/DdType.h"
 

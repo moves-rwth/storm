@@ -8,10 +8,10 @@
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/solver.h"
 
 #include "cpphoafparser/consumer/hoa_consumer.hh"

@@ -3,6 +3,8 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/dd/Add.h"
@@ -10,8 +12,6 @@
 #include "storm/storage/dd/DdMetaVariable.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/Odd.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 class Cudd {
    public:

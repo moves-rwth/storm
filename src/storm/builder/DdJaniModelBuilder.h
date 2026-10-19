@@ -2,9 +2,9 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/expressions/Variable.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/storage/dd/DdType.h"
-#include "storm/storage/expressions/Variable.h"
 #include "storm/utility/OptionalRef.h"
 
 #include "storm/builder/TerminalStatesGetter.h"

@@ -1,9 +1,9 @@
 #pragma once
 
+#include "storm/expressions/ExpressionVisitor.h"
+#include "storm/expressions/SyntacticalEqualityCheckVisitor.h"
 #include "storm/languages/jani/expressions/JaniExpressions.h"
 #include "storm/languages/jani/visitor/JaniExpressionVisitor.h"
-#include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"
 
 namespace storm {
 namespace expressions {

@@ -1,5 +1,5 @@
 #pragma once
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 #include "storm/storage/valuations/Valuations.h"
 
 namespace storm::storage::sparse {

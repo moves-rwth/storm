@@ -1,7 +1,7 @@
 #pragma once
 
+#include "storm/expressions/ExpressionVisitor.h"
 #include "storm/languages/jani/expressions/JaniExpressions.h"
-#include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
 namespace expressions {

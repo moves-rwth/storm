@@ -3,8 +3,8 @@
 #include <map>
 #include <string>
 
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 
 namespace storm {
 namespace jani {

@@ -9,9 +9,9 @@
 #include "storm-pars/scp/ScpOptions.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/environment/Environment.h"
+#include "storm/expressions/Variable.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm::pars::scp {
 

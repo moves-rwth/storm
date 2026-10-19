@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/expressions/Expressions.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/expressions/ExpressionVisitor.h"
+#include "storm/expressions/Expressions.h"
+#include "storm/expressions/Variable.h"
 
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"

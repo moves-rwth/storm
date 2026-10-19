@@ -3,9 +3,9 @@
 #include <boost/optional.hpp>
 #include <string>
 
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 #include "storm/languages/jani/types/AllJaniTypes.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace jani {

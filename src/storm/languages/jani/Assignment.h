@@ -2,8 +2,8 @@
 
 #include <functional>
 
+#include "storm/expressions/Expression.h"
 #include "storm/languages/jani/LValue.h"
-#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace jani {

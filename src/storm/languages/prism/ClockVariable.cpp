@@ -1,7 +1,7 @@
 #include "storm/languages/prism/ClockVariable.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 
 namespace storm {

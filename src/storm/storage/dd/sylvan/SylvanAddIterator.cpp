@@ -3,9 +3,9 @@
 #include <cmath>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

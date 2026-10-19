@@ -2,11 +2,11 @@
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/expressions/ExpressionVisitor.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/languages/jani/visitor/JaniExpressionVisitor.h"
 #include "storm/logic/FormulaVisitor.h"
-#include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
 namespace jani {

@@ -3,7 +3,7 @@
 #include "storm/languages/jani/LValue.h"
 #include "storm/languages/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
-#include "storm/storage/expressions/LinearityCheckVisitor.h"
+#include "storm/expressions/LinearityCheckVisitor.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"

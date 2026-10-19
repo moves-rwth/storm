@@ -6,9 +6,9 @@
 #include "storm-pomdp/beliefs/utility/BeliefNumerics.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/solver/LpSolver.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 

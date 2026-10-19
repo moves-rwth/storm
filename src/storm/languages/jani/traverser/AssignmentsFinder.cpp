@@ -1,6 +1,6 @@
 #include "storm/languages/jani/traverser/AssignmentsFinder.h"
 
-#include "storm/storage/expressions/Variable.h"
+#include "storm/expressions/Variable.h"
 
 namespace storm {
 namespace jani {

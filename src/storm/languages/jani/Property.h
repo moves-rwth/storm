@@ -2,11 +2,11 @@
 
 #include <functional>
 
+#include "storm/expressions/Variable.h"
 #include "storm/logic/CloneVisitor.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/results/FilterType.h"
-#include "storm/storage/expressions/Variable.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"

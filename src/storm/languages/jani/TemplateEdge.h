@@ -3,9 +3,9 @@
 #include <memory>
 #include <vector>
 
+#include "storm/expressions/Expression.h"
 #include "storm/languages/jani/TemplateEdgeDestination.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace jani {

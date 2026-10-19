@@ -5,9 +5,9 @@
 #include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/environment/Environment.h"
+#include "storm/expressions/Expression.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/dd/Bdd.h"
-#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/solver.h"
 
 class Cudd {

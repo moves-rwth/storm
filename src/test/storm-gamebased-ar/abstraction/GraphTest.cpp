@@ -8,6 +8,7 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/expressions/Expression.h"
 #include "storm/languages/SymbolicModelDescription.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
@@ -18,7 +19,6 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/solver.h"
 

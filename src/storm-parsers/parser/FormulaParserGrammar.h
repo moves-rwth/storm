@@ -8,10 +8,10 @@
 #include "storm-parsers/parser/ExpressionParser.h"
 #include "storm-parsers/parser/SpiritErrorHandler.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/results/FilterType.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
 
 namespace storm {
 namespace logic {

@@ -3,7 +3,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/storage/expressions/Expressions.h"
+#include "storm/expressions/Expressions.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

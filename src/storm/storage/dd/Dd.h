@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "storm/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace dd {

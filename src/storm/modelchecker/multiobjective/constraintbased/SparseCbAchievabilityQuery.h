@@ -2,8 +2,8 @@
 
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbQuery.h"
 
+#include "storm/expressions/Variable.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace modelchecker {

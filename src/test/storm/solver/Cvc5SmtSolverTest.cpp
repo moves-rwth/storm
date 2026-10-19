@@ -3,8 +3,8 @@
 
 #ifdef STORM_HAVE_CVC5
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/expressions/OperatorType.h"
 #include "storm/solver/Cvc5SmtSolver.h"
-#include "storm/storage/expressions/OperatorType.h"
 
 TEST(Cvc5SmtSolver, CheckSat) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());

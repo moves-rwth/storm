@@ -2,9 +2,9 @@
 
 #include <map>
 
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 #include "storm/languages/prism/LocatedInformation.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace prism {
