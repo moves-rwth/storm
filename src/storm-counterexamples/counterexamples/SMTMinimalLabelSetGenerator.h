@@ -397,12 +397,14 @@ class SMTMinimalLabelSetGenerator {
      * Asserts cuts that are derived from the explicit representation of the model and rule out a lot of
      * suboptimal solutions.
      *
+     * @param env The environment determining the SMT solver to use for local checks.
      * @param symbolicModel The symbolic model description used to build the model.
      * @param model The labeled model for which to compute the cuts.
      * @param context The Z3 context in which to build the expressions.
      * @param solver The solver to use for the satisfiability evaluation.
      */
-    static std::chrono::milliseconds assertCuts(storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model,
+    static std::chrono::milliseconds assertCuts(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
+                                                storm::models::sparse::Model<T> const& model,
                                                 std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
                                                 storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation,
                                                 RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver,
@@ -509,7 +511,7 @@ class SMTMinimalLabelSetGenerator {
             std::unique_ptr<storm::solver::SmtSolver> localSolver;
             if (symbolicModel.isPrismProgram()) {
                 storm::prism::Program const& program = symbolicModel.asPrismProgram();
-                localSolver = storm::utility::solver::getSmtSolver(program.getManager());
+                localSolver = storm::utility::solver::getSmtSolver(env, program.getManager());
 
                 // Then add the constraints for bounds of the integer variables.
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
@@ -522,7 +524,7 @@ class SMTMinimalLabelSetGenerator {
                 }
             } else {
                 storm::jani::Model const& janiModel = symbolicModel.asJaniModel();
-                localSolver = storm::utility::solver::getSmtSolver(janiModel.getManager());
+                localSolver = storm::utility::solver::getSmtSolver(env, janiModel.getManager());
 
                 for (auto const& integerVariable : janiModel.getGlobalVariables().getBoundedIntegerVariables()) {
                     if (integerVariable.isTransient()) {
@@ -1879,7 +1881,7 @@ class SMTMinimalLabelSetGenerator {
 
         // (3) Create a solver.
         std::shared_ptr<storm::expressions::ExpressionManager> manager = std::make_shared<storm::expressions::ExpressionManager>();
-        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(*manager);
+        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(env, *manager);
 
         // (4) Create the variables for the relevant commands.
         VariableInformation variableInformation = createVariables(manager, model, psiStates, relevancyInformation, options.encodeReachability);
@@ -1897,7 +1899,7 @@ class SMTMinimalLabelSetGenerator {
         // (6) Add constraints that cut off a lot of suboptimal solutions.
         STORM_LOG_DEBUG("Asserting cuts.");
         stats.cutTime =
-            assertCuts(symbolicModel, model, labelSets, psiStates, variableInformation, relevancyInformation, *solver, options.addBackwardImplicationCuts);
+            assertCuts(env, symbolicModel, model, labelSets, psiStates, variableInformation, relevancyInformation, *solver, options.addBackwardImplicationCuts);
         STORM_LOG_DEBUG("Asserted cuts.");
         if (options.encodeReachability) {
             assertReachabilityCuts(model, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
