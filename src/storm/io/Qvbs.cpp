@@ -1,4 +1,4 @@
-#include "Qvbs.h"
+#include "storm/io/Qvbs.h"
 
 #include <algorithm>
 
@@ -12,7 +12,7 @@
 #include "storm/utility/string.h"
 
 namespace storm {
-namespace storage {
+namespace io {
 
 storm::json<storm::RationalNumber> readQvbsJsonFile(std::string const& filePath) {
     STORM_LOG_THROW(storm::io::fileExistsAndIsReadable(filePath), storm::exceptions::WrongFormatException, "QVBS json file " << filePath << " was not found.");
@@ -150,5 +150,5 @@ std::string QvbsBenchmark::getInfo(uint64_t instanceIndex, boost::optional<std::
     return s.str();
 }
 
-}  // namespace storage
+}  // namespace io
 }  // namespace storm

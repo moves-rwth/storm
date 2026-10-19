@@ -9,7 +9,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
-namespace storage {
+namespace io {
 
 /*!
  * This class provides easy access to a benchmark of the Quantitative Verification Benchmark Set
@@ -35,5 +35,5 @@ class QvbsBenchmark {
     std::string modelPath;
     storm::json<storm::RationalNumber> modelData;
 };
-}  // namespace storage
+}  // namespace io
 }  // namespace storm

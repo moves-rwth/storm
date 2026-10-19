@@ -4,7 +4,7 @@
 #include <type_traits>
 
 #include "storm-cli-utilities/AutomaticSettings.h"
-#include "storm-cli-utilities/Qvbs.h"
+#include "storm/io/Qvbs.h"
 #include "storm-cli-utilities/print.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -105,7 +105,7 @@ inline void parseProperties(storm::settings::modules::IOSettings const& ioSettin
 inline SymbolicInput parseSymbolicInputQvbs(storm::settings::modules::IOSettings const& ioSettings) {
     // Parse the model input
     SymbolicInput input;
-    storm::storage::QvbsBenchmark benchmark(ioSettings.getQvbsModelName());
+    storm::io::QvbsBenchmark benchmark(ioSettings.getQvbsModelName());
     STORM_PRINT_AND_LOG(benchmark.getInfo(ioSettings.getQvbsInstanceIndex(), ioSettings.getQvbsPropertyFilter()));
     storm::utility::Stopwatch modelParsingWatch(true);
     auto janiInput = storm::api::parseJaniModel(benchmark.getJaniFile(ioSettings.getQvbsInstanceIndex()), ioSettings.getQvbsPropertyFilter());
