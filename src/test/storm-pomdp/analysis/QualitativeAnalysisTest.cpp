@@ -33,7 +33,8 @@ void graphalgorithm_test(std::string const& path, std::string const& constants, 
     storm::storage::BitVector targetStates = qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula());
 }
 
-void oneshot_test(storm::solver::SmtSolverType smtSolverType, std::string const& path, std::string const& constants, std::string formulaString, uint64_t lookahead) {
+void oneshot_test(storm::solver::SmtSolverType smtSolverType, std::string const& path, std::string const& constants, std::string formulaString,
+                  uint64_t lookahead) {
     storm::prism::Program program = storm::parser::PrismParser::parse(path);
     program = program.preprocess(constants);
     std::shared_ptr<storm::logic::Formula const> formula = storm::api::parsePropertiesForPrismProgram(formulaString, program).front().getRawFormula();
@@ -55,7 +56,8 @@ void oneshot_test(storm::solver::SmtSolverType smtSolverType, std::string const&
     memlessSearch.analyzeForInitialStates(lookahead);
 }
 
-void iterativesearch_test(storm::solver::SmtSolverType smtSolverType, std::string const& path, std::string const& constants, std::string formulaString, bool wr) {
+void iterativesearch_test(storm::solver::SmtSolverType smtSolverType, std::string const& path, std::string const& constants, std::string formulaString,
+                          bool wr) {
     storm::prism::Program program = storm::parser::PrismParser::parse(path);
     program = program.preprocess(constants);
     std::shared_ptr<storm::logic::Formula const> formula = storm::api::parsePropertiesForPrismProgram(formulaString, program).front().getRawFormula();
