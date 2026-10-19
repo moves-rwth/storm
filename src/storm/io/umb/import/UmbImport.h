@@ -3,8 +3,8 @@
 #include <filesystem>
 #include <memory>
 
-#include "storm/storage/umb/import/ImportOptions.h"
-#include "storm/storage/umb/model/UmbModelForward.h"
+#include "storm/io/umb/import/ImportOptions.h"
+#include "storm/languages/umb/UmbModelForward.h"
 
 namespace storm::umb {
 

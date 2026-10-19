@@ -1,6 +1,6 @@
-#include "storm/storage/umb/import/UmbImport.h"
+#include "storm/io/umb/import/UmbImport.h"
 
-#include "storm/storage/umb/model/UmbModel.h"
+#include "storm/languages/umb/UmbModel.h"
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/io/ArchiveReader.h"

@@ -3,7 +3,7 @@
 #include <ranges>
 #include <string_view>
 
-#include "storm/storage/umb/model/FileTypes.h"
+#include "storm/languages/umb/FileTypes.h"
 #include "storm/utility/macros.h"
 
 namespace storm::umb {

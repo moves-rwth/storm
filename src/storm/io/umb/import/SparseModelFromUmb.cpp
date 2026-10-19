@@ -1,4 +1,4 @@
-#include "storm/storage/umb/import/SparseModelFromUmb.h"
+#include "storm/io/umb/import/SparseModelFromUmb.h"
 
 #include <ranges>
 #include <utility>
@@ -11,10 +11,10 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
-#include "storm/storage/umb/model/ModelIndex.h"
-#include "storm/storage/umb/model/StringEncoding.h"
-#include "storm/storage/umb/model/UmbModel.h"
-#include "storm/storage/umb/model/ValueEncoding.h"
+#include "storm/languages/umb/ModelIndex.h"
+#include "storm/languages/umb/StringEncoding.h"
+#include "storm/languages/umb/UmbModel.h"
+#include "storm/languages/umb/ValueEncoding.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/macros.h"

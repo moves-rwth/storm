@@ -1,9 +1,9 @@
-#include "storm/storage/umb/model/Validation.h"
+#include "storm/languages/umb/Validation.h"
 
 #include <sstream>
 #include <string_view>
 
-#include "storm/storage/umb/model/UmbModel.h"
+#include "storm/languages/umb/UmbModel.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/UnexpectedException.h"

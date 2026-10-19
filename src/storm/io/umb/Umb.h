@@ -2,8 +2,8 @@
 #include <filesystem>
 #include <memory>
 
-#include "storm/storage/umb/export/ExportOptions.h"
-#include "storm/storage/umb/import/ImportOptions.h"
+#include "storm/io/umb/export/ExportOptions.h"
+#include "storm/io/umb/import/ImportOptions.h"
 
 #include "storm/models/sparse/ModelForward.h"
 

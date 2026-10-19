@@ -1,6 +1,6 @@
-#include "storm/storage/umb/model/GenericVector.h"
+#include "storm/languages/umb/GenericVector.h"
 
-#include "storm/storage/umb/model/ValueEncoding.h"
+#include "storm/languages/umb/ValueEncoding.h"
 
 namespace storm::umb {
 

@@ -1,10 +1,10 @@
-#include "storm/storage/umb/model/UmbModel.h"
+#include "storm/languages/umb/UmbModel.h"
 
 #include <boost/algorithm/string/join.hpp>
 #include <sstream>
 
-#include "storm/storage/umb/model/Validation.h"
-#include "storm/storage/umb/model/ValueEncoding.h"
+#include "storm/languages/umb/Validation.h"
+#include "storm/languages/umb/ValueEncoding.h"
 
 namespace storm::umb {
 

@@ -11,7 +11,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/Scheduler.h"
-#include "storm/storage/umb/Umb.h"
+#include "storm/io/umb/Umb.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/UnexpectedException.h"

@@ -1,11 +1,11 @@
-#include "storm/storage/umb/Umb.h"
+#include "storm/io/umb/Umb.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/storage/umb/export/SparseModelToUmb.h"
-#include "storm/storage/umb/export/UmbExport.h"
-#include "storm/storage/umb/import/SparseModelFromUmb.h"
-#include "storm/storage/umb/import/UmbImport.h"
-#include "storm/storage/umb/model/UmbModel.h"
+#include "storm/io/umb/export/SparseModelToUmb.h"
+#include "storm/io/umb/export/UmbExport.h"
+#include "storm/io/umb/import/SparseModelFromUmb.h"
+#include "storm/io/umb/import/UmbImport.h"
+#include "storm/languages/umb/UmbModel.h"
 
 namespace storm::umb {
 

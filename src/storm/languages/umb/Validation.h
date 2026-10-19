@@ -2,8 +2,8 @@
 
 #include <iosfwd>
 
-#include "storm/storage/umb/model/Type.h"
-#include "storm/storage/umb/model/UmbModelForward.h"
+#include "storm/languages/umb/Type.h"
+#include "storm/languages/umb/UmbModelForward.h"
 
 namespace storm::umb {
 /*!

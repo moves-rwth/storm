@@ -5,7 +5,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
-#include "storm/storage/umb/model/Validation.h"
+#include "storm/languages/umb/Validation.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/macros.h"
 

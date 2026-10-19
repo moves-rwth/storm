@@ -1,9 +1,9 @@
-#include "storm/storage/umb/export/UmbExport.h"
+#include "storm/io/umb/export/UmbExport.h"
 
 #include <boost/pfr.hpp>
 
-#include "storm/storage/umb/model/UmbModel.h"
-#include "storm/storage/umb/model/ValueEncoding.h"
+#include "storm/languages/umb/UmbModel.h"
+#include "storm/languages/umb/ValueEncoding.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"

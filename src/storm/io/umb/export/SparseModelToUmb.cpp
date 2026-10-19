@@ -1,8 +1,8 @@
-#include "storm/storage/umb/export/SparseModelToUmb.h"
+#include "storm/io/umb/export/SparseModelToUmb.h"
 
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/umb/model/StringEncoding.h"
-#include "storm/storage/umb/model/UmbModel.h"
+#include "storm/languages/umb/StringEncoding.h"
+#include "storm/languages/umb/UmbModel.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
