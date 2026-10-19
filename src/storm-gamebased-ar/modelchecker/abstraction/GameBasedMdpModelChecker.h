@@ -9,7 +9,7 @@
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/Odd.h"
 
-#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/languages/SymbolicModelDescription.h"
 
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResult.h"
@@ -90,7 +90,7 @@ class GameBasedMdpModelChecker : public storm::modelchecker::AbstractModelChecke
      * @param options Additional options for the abstraction-refinement process.
      * @param smtSolverFactory A factory used to create SMT solver when necessary.
      */
-    explicit GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model,
+    explicit GameBasedMdpModelChecker(storm::languages::SymbolicModelDescription const& model,
                                       abstraction::AbstractionOptions const& options = abstraction::AbstractionOptions(),
                                       std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory =
                                           std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -165,7 +165,7 @@ class GameBasedMdpModelChecker : public storm::modelchecker::AbstractModelChecke
 
     /// The preprocessed model that contains only one module/automaton and otherwhise corresponds to the semantics
     /// of the original model description.
-    storm::storage::SymbolicModelDescription preprocessedModel;
+    storm::languages::SymbolicModelDescription preprocessedModel;
 
     /// A factory that is used for creating SMT solvers when needed.
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;

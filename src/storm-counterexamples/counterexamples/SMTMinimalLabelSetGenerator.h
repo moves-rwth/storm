@@ -42,7 +42,7 @@ namespace storm::counterexamples {
  * Helper to avoid case disticinot between prism and jani
  * Returns the number of edges/commands in a symbolic model description.
  */
-inline size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) {
+inline size_t nrCommands(storm::languages::SymbolicModelDescription const& descr) {
     if (descr.isJaniModel()) {
         return descr.asJaniModel().getNumberOfEdges();
     } else {
@@ -372,7 +372,7 @@ class SMTMinimalLabelSetGenerator {
      * Returns an expression characterizing the initial states of the given model, where for JANI models the initial
      * locations of the automata are taken into account as well.
      */
-    static storm::expressions::Expression getInitialStatesExpression(storm::storage::SymbolicModelDescription const& symbolicModel) {
+    static storm::expressions::Expression getInitialStatesExpression(storm::languages::SymbolicModelDescription const& symbolicModel) {
         if (symbolicModel.isPrismProgram()) {
             return symbolicModel.asPrismProgram().getInitialStatesExpression();
         }
@@ -401,7 +401,7 @@ class SMTMinimalLabelSetGenerator {
      * @param context The Z3 context in which to build the expressions.
      * @param solver The solver to use for the satisfiability evaluation.
      */
-    static std::chrono::milliseconds assertCuts(storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model,
+    static std::chrono::milliseconds assertCuts(storm::languages::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model,
                                                 std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
                                                 storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation,
                                                 RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver,
@@ -1810,7 +1810,7 @@ class SMTMinimalLabelSetGenerator {
      * @param options A set of options for customization.
      */
     static std::vector<storm::storage::FlatSet<uint_fast64_t>> getMinimalLabelSet(
-        Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel,
+        Environment const& env, GeneratorStats& stats, storm::languages::SymbolicModelDescription const& symbolicModel,
         storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
         std::vector<double> propertyThreshold, boost::optional<std::vector<std::string>> const& rewardName, bool strictBound,
         storm::storage::FlatSet<uint_fast64_t> const& dontCareLabels = storm::storage::FlatSet<uint_fast64_t>(), Options const& options = Options()) {
@@ -2187,7 +2187,7 @@ class SMTMinimalLabelSetGenerator {
         }
     };
 
-    static CexInput precompute(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
+    static CexInput precompute(Environment const& env, storm::languages::SymbolicModelDescription const& symbolicModel,
                                storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         CexInput result;
         STORM_LOG_THROW(formula->isProbabilityOperatorFormula() || formula->isRewardOperatorFormula(), storm::exceptions::InvalidPropertyException,
@@ -2281,7 +2281,7 @@ class SMTMinimalLabelSetGenerator {
     }
 
     static std::vector<storm::storage::FlatSet<uint_fast64_t>> computeCounterexampleLabelSet(
-        Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel,
+        Environment const& env, GeneratorStats& stats, storm::languages::SymbolicModelDescription const& symbolicModel,
         storm::models::sparse::Model<T> const& model, CexInput const& counterexInput,
         storm::storage::FlatSet<uint_fast64_t> const& dontCareLabels = storm::storage::FlatSet<uint_fast64_t>(), Options const& options = Options(true)) {
         STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp),
@@ -2309,7 +2309,8 @@ class SMTMinimalLabelSetGenerator {
         return labelSets;
     }
 
-    static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
+    static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env,
+                                                                          storm::languages::SymbolicModelDescription const& symbolicModel,
                                                                           storm::models::sparse::Model<T> const& model,
                                                                           std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                           Options const& options = Options(true)) {

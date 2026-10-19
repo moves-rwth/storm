@@ -7,7 +7,7 @@
 namespace storm {
 namespace logic {
 
-LiftableTransitionRewardsVisitor::LiftableTransitionRewardsVisitor(storm::storage::SymbolicModelDescription const& symbolicModelDescription)
+LiftableTransitionRewardsVisitor::LiftableTransitionRewardsVisitor(storm::languages::SymbolicModelDescription const& symbolicModelDescription)
     : symbolicModelDescription(symbolicModelDescription) {
     // Intentionally left empty.
 }

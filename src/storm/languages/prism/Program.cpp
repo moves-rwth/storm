@@ -10,6 +10,7 @@
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/languages/jani/Model.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/languages/jani/visitor/JaniExpressionSubstitutionVisitor.h"
@@ -17,7 +18,6 @@
 #include "storm/languages/prism/Compositions.h"
 #include "storm/languages/prism/ToJaniConverter.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
@@ -1172,7 +1172,7 @@ Program Program::preprocess(std::map<storm::expressions::Variable, storm::expres
 }
 
 Program Program::preprocess(std::string const& constantDefinitionString) const {
-    return this->preprocess(storm::storage::parseConstantDefinitionString(this->getManager(), constantDefinitionString));
+    return this->preprocess(storm::languages::parseConstantDefinitionString(this->getManager(), constantDefinitionString));
 }
 
 Program Program::labelUnlabelledCommands(std::map<uint64_t, std::string> const& nameSuggestions) const {

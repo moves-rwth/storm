@@ -9,7 +9,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
-namespace storage {
+namespace languages {
 
 class SymbolicModelDescription {
    public:
@@ -75,5 +75,5 @@ std::ostream& operator<<(std::ostream& out, SymbolicModelDescription::ModelType 
  */
 std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::expressions::ExpressionManager const& manager,
                                                                                                      std::string const& constantDefinitionString);
-}  // namespace storage
+}  // namespace languages
 }  // namespace storm

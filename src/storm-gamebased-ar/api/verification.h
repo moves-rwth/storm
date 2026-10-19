@@ -17,16 +17,16 @@ using AbstractionRefinementOptions = storm::gbar::abstraction::AbstractionOption
 
 template<storm::dd::DdType DdType, typename ValueType>
 typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type
-verifyWithAbstractionRefinementEngine(storm::Environment const& env, storm::storage::SymbolicModelDescription const& model,
+verifyWithAbstractionRefinementEngine(storm::Environment const& env, storm::languages::SymbolicModelDescription const& model,
                                       storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
                                       AbstractionRefinementOptions const& options = AbstractionRefinementOptions()) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    if (model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC) {
+    if (model.getModelType() == storm::languages::SymbolicModelDescription::ModelType::DTMC) {
         storm::gbar::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(model, options);
         if (modelchecker.canHandle(task)) {
             result = modelchecker.check(env, task);
         }
-    } else if (model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MDP) {
+    } else if (model.getModelType() == storm::languages::SymbolicModelDescription::ModelType::MDP) {
         storm::gbar::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(model, options);
         if (modelchecker.canHandle(task)) {
             result = modelchecker.check(env, task);
@@ -40,7 +40,7 @@ verifyWithAbstractionRefinementEngine(storm::Environment const& env, storm::stor
 
 template<storm::dd::DdType DdType, typename ValueType>
 typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type
-verifyWithAbstractionRefinementEngine(storm::Environment const&, storm::storage::SymbolicModelDescription const&,
+verifyWithAbstractionRefinementEngine(storm::Environment const&, storm::languages::SymbolicModelDescription const&,
                                       storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&,
                                       AbstractionRefinementOptions const& = AbstractionRefinementOptions()) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Abstraction-refinement engine does not support data type.");
@@ -48,7 +48,7 @@ verifyWithAbstractionRefinementEngine(storm::Environment const&, storm::storage:
 
 template<storm::dd::DdType DdType, typename ValueType>
 std::unique_ptr<storm::modelchecker::CheckResult> verifyWithAbstractionRefinementEngine(
-    storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
+    storm::languages::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
     AbstractionRefinementOptions const& options = AbstractionRefinementOptions()) {
     Environment env;
     return verifyWithAbstractionRefinementEngine<DdType, ValueType>(env, model, task, options);

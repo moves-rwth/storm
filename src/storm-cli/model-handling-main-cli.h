@@ -24,7 +24,7 @@ namespace cli {
 inline void exportSymbolicInput(SymbolicInput const& input) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     if (input.model && input.model.get().isJaniModel()) {
-        storm::storage::SymbolicModelDescription const& model = input.model.get();
+        storm::languages::SymbolicModelDescription const& model = input.model.get();
         if (ioSettings.isExportJaniDotSet()) {
             storm::api::exportJaniModelAsDot(model.asJaniModel(), ioSettings.getExportJaniDotFilename());
         }

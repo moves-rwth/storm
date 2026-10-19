@@ -4,11 +4,11 @@
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/SymbolicModelDescription.h"
 
 TEST(MaximalEndComponentDecomposition, FullSystem1) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
@@ -147,7 +147,7 @@ TEST(MaximalEndComponentDecomposition, Example1) {
     GTEST_SKIP() << "Z3 not available.";
 #endif
     std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/mdp/prism-mec-example1.nm";
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
@@ -169,7 +169,7 @@ TEST(MaximalEndComponentDecomposition, Example2) {
     GTEST_SKIP() << "Z3 not available.";
 #endif
     std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/mdp/prism-mec-example2.nm";
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();

@@ -1,4 +1,4 @@
-#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/languages/SymbolicModelDescription.h"
 
 #include <boost/algorithm/string.hpp>
 
@@ -13,7 +13,7 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
-namespace storage {
+namespace languages {
 
 SymbolicModelDescription::SymbolicModelDescription(storm::jani::Model const& model) : modelDescription(model) {
     // Intentionally left empty.
@@ -311,5 +311,5 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> parseCons
 
     return constantDefinitions;
 }
-}  // namespace storage
+}  // namespace languages
 }  // namespace storm

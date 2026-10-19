@@ -47,7 +47,7 @@ using storm::gbar::abstraction::SymbolicQuantitativeGameResult;
 using storm::gbar::abstraction::SymbolicQuantitativeGameResultMinMax;
 
 template<storm::dd::DdType Type, typename ModelType>
-GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model,
+GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::languages::SymbolicModelDescription const& model,
                                                                     abstraction::AbstractionOptions const& options,
                                                                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
     : options(options),
@@ -1583,11 +1583,11 @@ std::vector<storm::expressions::Expression> GameBasedMdpModelChecker<Type, Model
 template<storm::dd::DdType Type, typename ModelType>
 storm::OptimizationDirection GameBasedMdpModelChecker<Type, ModelType>::getPlayer1Direction(
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
-    if (preprocessedModel.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC) {
+    if (preprocessedModel.getModelType() == storm::languages::SymbolicModelDescription::ModelType::DTMC) {
         return storm::OptimizationDirection::Maximize;
     } else if (checkTask.isOptimizationDirectionSet()) {
         return checkTask.getOptimizationDirection();
-    } else if (checkTask.isBoundSet() && preprocessedModel.getModelType() != storm::storage::SymbolicModelDescription::ModelType::DTMC) {
+    } else if (checkTask.isBoundSet() && preprocessedModel.getModelType() != storm::languages::SymbolicModelDescription::ModelType::DTMC) {
         return storm::logic::isLowerBound(checkTask.getBoundComparisonType()) ? storm::OptimizationDirection::Minimize : storm::OptimizationDirection::Maximize;
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not derive player 1 optimization direction.");

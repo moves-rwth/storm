@@ -15,6 +15,7 @@
 #include "storm/exceptions/OptionParserException.h"
 #include "storm/io/Qvbs.h"
 #include "storm/io/file.h"
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/languages/jani/Property.h"
 #include "storm/languages/jani/localeliminator/AutomaticAction.h"
 #include "storm/languages/jani/localeliminator/JaniLocalEliminator.h"
@@ -36,7 +37,6 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/transformer/bisimulation/sparse/Options.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/NumberTraits.h"
@@ -50,7 +50,7 @@ namespace cli {
 
 struct SymbolicInput {
     // The symbolic model description.
-    boost::optional<storm::storage::SymbolicModelDescription> model;
+    boost::optional<storm::languages::SymbolicModelDescription> model;
 
     // The original properties to check.
     std::vector<storm::jani::Property> properties;
@@ -299,7 +299,8 @@ inline ModelProcessingInformation getModelProcessingInformation(SymbolicInput co
     if (input.model) {
         auto builderType = storm::utility::getBuilderType(mpi.engine);
         bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) &&
-                                      (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA) && (!input.model->isJaniModel());
+                                      (input.model->getModelType() == storm::languages::SymbolicModelDescription::ModelType::MA) &&
+                                      (!input.model->isJaniModel());
         STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA,
                             "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the input model.");
         mpi.transformToJani |= transformToJaniForDdMA;

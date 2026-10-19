@@ -29,7 +29,7 @@ storm::jani::ModelFeatures getSupportedJaniFeatures(BuilderType const& builderTy
 }
 
 template<typename ValueType>
-bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
+bool canHandle(BuilderType const& builderType, storm::languages::SymbolicModelDescription const& modelDescription,
                storm::OptionalRef<std::vector<storm::jani::Property> const> properties) {
     storm::dd::DdType const ddType = storm::dd::DdType::Sylvan;
     if (!modelDescription.hasModel()) {
@@ -56,11 +56,11 @@ bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDesc
     return false;
 }
 
-template bool canHandle<double>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
+template bool canHandle<double>(BuilderType const& builderType, storm::languages::SymbolicModelDescription const& modelDescription,
                                 storm::OptionalRef<std::vector<storm::jani::Property> const> properties);
-template bool canHandle<storm::RationalNumber>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
+template bool canHandle<storm::RationalNumber>(BuilderType const& builderType, storm::languages::SymbolicModelDescription const& modelDescription,
                                                storm::OptionalRef<std::vector<storm::jani::Property> const> properties);
-template bool canHandle<storm::RationalFunction>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
+template bool canHandle<storm::RationalFunction>(BuilderType const& builderType, storm::languages::SymbolicModelDescription const& modelDescription,
                                                  storm::OptionalRef<std::vector<storm::jani::Property> const> properties);
 
 }  // namespace builder

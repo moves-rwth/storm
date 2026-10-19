@@ -9,11 +9,11 @@ namespace storm {
 namespace api {
 
 std::shared_ptr<storm::counterexamples::Counterexample> computeHighLevelCounterexampleMilp(
-    storm::Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, std::shared_ptr<storm::models::sparse::Mdp<double>> mdp,
+    storm::Environment const& env, storm::languages::SymbolicModelDescription const& symbolicModel, std::shared_ptr<storm::models::sparse::Mdp<double>> mdp,
     std::shared_ptr<storm::logic::Formula const> const& formula, bool includeSchedulerCuts = storm::counterexamples::CounterexampleOptions().useSchedulerCuts);
 
 std::shared_ptr<storm::counterexamples::Counterexample> computeHighLevelCounterexampleMaxSmt(
-    storm::Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, std::shared_ptr<storm::models::sparse::Model<double>> model,
+    storm::Environment const& env, storm::languages::SymbolicModelDescription const& symbolicModel, std::shared_ptr<storm::models::sparse::Model<double>> model,
     std::shared_ptr<storm::logic::Formula const> const& formula,
     storm::counterexamples::SMTMinimalLabelSetGenerator<double>::Options const& options =
         storm::counterexamples::SMTMinimalLabelSetGenerator<double>::Options(true));

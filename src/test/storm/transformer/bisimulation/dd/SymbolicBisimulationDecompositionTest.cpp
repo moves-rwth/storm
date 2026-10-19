@@ -6,6 +6,7 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
 #include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
@@ -18,7 +19,6 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/solver/SymbolicLinearEquationSolver.h"
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/transformer/bisimulation/dd/BisimulationDecomposition.h"
 #include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
 #include "storm/utility/constants.h"
@@ -187,7 +187,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient) {
 
 TYPED_TEST(SymbolicModelBisimulationDecomposition, Crowds) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    storm::storage::SymbolicModelDescription smd = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds5_5.pm");
+    storm::languages::SymbolicModelDescription smd = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds5_5.pm");
 
     // Preprocess model to substitute all constants.
     smd = smd.preprocess();
@@ -259,7 +259,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, TwoDice) {
 
 TYPED_TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    storm::storage::SymbolicModelDescription smd = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader4.nm");
+    storm::languages::SymbolicModelDescription smd = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader4.nm");
 
     // Preprocess model to substitute all constants.
     smd = smd.preprocess();
@@ -314,7 +314,8 @@ void checkMarkovAutomatonExitRatePreserved(storm::Environment const& env, storm:
 
 // Bisimulation minimization must preserve the exit rates of Markovian states, for any ValueType.
 template<storm::dd::DdType DdType, typename ValueType>
-void checkMarkovAutomatonExitRatesPreservedUnderBisimulation(storm::Environment const& env, storm::storage::SymbolicModelDescription const& modelDescription) {
+void checkMarkovAutomatonExitRatesPreservedUnderBisimulation(storm::Environment const& env,
+                                                             storm::languages::SymbolicModelDescription const& modelDescription) {
     std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> model = storm::api::buildSymbolicModel<DdType, ValueType>(
         env, modelDescription, std::vector<std::shared_ptr<storm::logic::Formula const>>(), /*buildFullModel=*/true);
 
@@ -348,7 +349,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, MarkovAutomatonExitRates) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/bisimulation_exit_rates.ma").preprocess();
 
     // The Dd-based Prism model builder does not support Markov automata directly, so we go via Jani.
-    storm::storage::SymbolicModelDescription modelDescription(program.toJani());
+    storm::languages::SymbolicModelDescription modelDescription(program.toJani());
 
     checkMarkovAutomatonExitRatesPreservedUnderBisimulation<DdType, double>(this->env, modelDescription);
 
