@@ -4,7 +4,7 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/utility/solver.h"
-#include "test/storm/storage/SmtSolverTestUtils.h"
+#include "test/SmtSolverTestUtils.h"
 
 namespace {
 

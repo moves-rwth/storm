@@ -5,7 +5,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/utility/solver.h"
-#include "test/storm/storage/SmtSolverTestUtils.h"
+#include "test/SmtSolverTestUtils.h"
 
 namespace {
 
