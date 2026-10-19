@@ -5,8 +5,8 @@
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/SubmatrixBuilder.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
 

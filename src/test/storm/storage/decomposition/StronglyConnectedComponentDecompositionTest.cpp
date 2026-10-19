@@ -5,7 +5,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 
 TEST(StronglyConnectedComponentDecomposition, SmallSystemFromMatrix) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder(6, 6);

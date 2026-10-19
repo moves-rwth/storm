@@ -15,7 +15,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 

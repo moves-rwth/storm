@@ -3,8 +3,8 @@
 #include <string>
 
 #include "storm/models/sparse/NondeterministicModel.h"
-#include "storm/storage/Decomposition.h"
-#include "storm/storage/MaximalEndComponent.h"
+#include "storm/storage/decomposition/Decomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponent.h"
 #include "storm/utility/OptionalRef.h"
 
 namespace storm::storage {

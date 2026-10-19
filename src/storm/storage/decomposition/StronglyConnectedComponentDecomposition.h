@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "storm/storage/BitVector.h"
-#include "storm/storage/Decomposition.h"
-#include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/decomposition/Decomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponent.h"
 #include "storm/utility/OptionalRef.h"
 namespace storm {
 

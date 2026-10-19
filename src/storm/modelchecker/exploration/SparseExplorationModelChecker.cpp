@@ -13,8 +13,8 @@
 
 #include "storm/generator/CompressedState.h"
 
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 
 #include "storm/languages/prism/Program.h"
 

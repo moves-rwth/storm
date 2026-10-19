@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "storm/storage/BitVector.h"
-#include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/decomposition/StronglyConnectedComponent.h"
 
 namespace storm {
 namespace analysis {

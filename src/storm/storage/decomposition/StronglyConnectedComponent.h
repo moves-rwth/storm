@@ -1,7 +1,7 @@
 #pragma once
 
-#include "storm/storage/Decomposition.h"
-#include "storm/storage/StateBlock.h"
+#include "storm/storage/decomposition/Decomposition.h"
+#include "storm/storage/decomposition/StateBlock.h"
 
 namespace storm {
 namespace storage {

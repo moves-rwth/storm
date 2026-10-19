@@ -2,8 +2,8 @@
 
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/Decomposition.h"
-#include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/decomposition/Decomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponent.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/OptionalRef.h"
 
