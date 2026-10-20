@@ -48,6 +48,7 @@ Version 2.0.x
     * Updated Spot to version 2.16, googletest to 1.18.0 and carl-storm to 14.37.
     * Eigen is now fetched from its GitHub mirror; 3rd-party dependencies are declared via `FetchContent_Declare`.
 - Developer:
+    * Moved files from `src/storm/storage` to more fitting locations such as `storm/languages`, `storm/expressions/` and `storm/dd/`. See `doc/files_moved.md` for the full list of file and namespace changes.
     * Added `SubmatrixBuilder`; `SparseMatrixBuilder` now has an accumulation mode and is stricter about dimensions in `build(..)`.
     * Added `ExtendedNumber` to replace infinities on rationals.
     * Added ccache support to the Dockerfiles. Revised CI.
