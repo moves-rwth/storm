@@ -13,7 +13,7 @@ Version 2.0.x
 - Improved model checking of interval MDPs (iMDPs and interval DTMCs): added expected time (`Tmin/max=? [F "target"]`) and cumulative rewards (`Rmin/max=? [C<=k]`), and `Rmin=? [F "target"]` on models without zero-reward end components. Fixed the computation of `Rmin/max=? [F "target"]`.
 - Added a native CVC5 SMT solver backend. The SMT solver is selected in the environment; places without an environment use a solver chosen at compile time.
 - Revised sparse bisimulation.
-- Storm-pomdp:
+- `storm-pomdp`:
     * Revised belief exploration: modular belief storage, exploration and abstraction, with unfolding, discretization and grid clipping, independently selectable numeric types, and reward-bounded reachability.
     * Added extraction and export of POMDP policies as finite-state controllers from belief unfolding (`--export-policy`, JSON or DOT).
     * Added a high-level API for belief-based verification of reachability probabilities and rewards.
