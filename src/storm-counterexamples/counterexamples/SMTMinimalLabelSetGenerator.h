@@ -400,8 +400,13 @@ class SMTMinimalLabelSetGenerator {
      * @param env The environment determining the SMT solver to use for local checks.
      * @param symbolicModel The symbolic model description used to build the model.
      * @param model The labeled model for which to compute the cuts.
-     * @param context The Z3 context in which to build the expressions.
+     * @param labelSets The label sets of the choices of the model.
+     * @param psiStates A bit vector characterizing all psi states in the model.
+     * @param variableInformation A structure with information about the variables of the solver.
+     * @param relevancyInformation A structure with information about the relevant states, choices and labels.
      * @param solver The solver to use for the satisfiability evaluation.
+     * @param addBackwardImplications Whether to also assert backward implications derived from the symbolic model.
+     * @return The time spent on asserting the cuts.
      */
     static std::chrono::milliseconds assertCuts(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
                                                 storm::models::sparse::Model<T> const& model,
