@@ -53,6 +53,7 @@ Version 2.0.x
     * Added `ExtendedNumber` to replace infinities on rationals.
     * Added ccache support to the Dockerfiles. Revised CI.
 
+
 Version 1.14.x
 --------------
 
