@@ -19,6 +19,7 @@ Version 2.0.x
 - Faster model building.
 - Added model tolerance: sparse models now store the tolerance used to decide whether a model is valid, for example whether transition probabilities sum to one. It is set from the model builder or a command-line flag, and bisimulation uses it by default. It is independent of the precision used in verification.
 - `--precision` is now interpreted as the distance between the bounds and the value (half-width) in interval iteration and the topological solver. GVI uses relative precision if it is set.
+- Added support for certificate computation for reachability probabilities and expected rewards on MDPs
 - `storm-pomdp`:
     * Revised belief exploration: modular belief storage, exploration and abstraction, with unfolding, discretization and grid clipping, independently selectable numeric types, and reward-bounded reachability.
     * Added extraction and export of POMDP policies as finite-state controllers from belief unfolding (`--export-policy`, JSON or DOT).
