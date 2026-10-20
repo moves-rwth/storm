@@ -28,7 +28,7 @@
 #include "storm/storage/BackwardTransitionCache.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/Extremum.h"
