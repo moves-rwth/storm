@@ -17,7 +17,7 @@ Version 2.0.x
     * Revised belief exploration: modular belief storage, exploration and abstraction, with unfolding, discretization and grid clipping, independently selectable numeric types, and reward-bounded reachability.
     * Added extraction and export of POMDP policies as finite-state controllers from belief unfolding (`--export-policy`, JSON or DOT).
     * Added a high-level API for belief-based verification of reachability probabilities and rewards.
-- Storm-pars:
+- `storm-pars`:
     * Added sequential convex programming (SCP) as a new method for parameter feasibility synthesis (`storm-pars --feasibility`).
     * Revised the storm-pars API, including `verify` and `checkFeasibility` functions for simple parameter synthesis, and moved graph conditions to `storm-pars/analysis`.
     * Refactored the monotonicity module.
