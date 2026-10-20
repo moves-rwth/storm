@@ -42,12 +42,14 @@ Version 2.0.x
     * Multi-objective properties and feature restriction.
     * POMDP analysis now rejects unsupported threshold formulae.
     * `mtbdd_iszero` on non-leaf nodes in sylvan.
-- Updated Spot to version 2.16, googletest to 1.18.0 and carl-storm to 14.37.
-- Eigen is now fetched from its GitHub mirror; 3rd-party dependencies are declared via `FetchContent_Declare`.
-- Re-enabled LTO.
-- Developer: Added `SubmatrixBuilder`; `SparseMatrixBuilder` now has an accumulation mode and is stricter about dimensions in `build(..)`.
-- Developer: Added `ExtendedNumber` to replace infinities on rationals.
-- Developer: Added ccache support to the Dockerfiles. Revised CI.
+    * LTO (link-time optimization) was only applied at the link step and thus ineffective since version 1.11.0; it is now applied at compile time as well.
+- Dependencies:
+    * Updated Spot to version 2.16, googletest to 1.18.0 and carl-storm to 14.37.
+    * Eigen is now fetched from its GitHub mirror; 3rd-party dependencies are declared via `FetchContent_Declare`.
+- Developer:
+    * Added `SubmatrixBuilder`; `SparseMatrixBuilder` now has an accumulation mode and is stricter about dimensions in `build(..)`.
+    * Added `ExtendedNumber` to replace infinities on rationals.
+    * Added ccache support to the Dockerfiles. Revised CI.
 
 Version 1.14.x
 --------------
