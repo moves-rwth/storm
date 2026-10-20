@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "storm-cli-utilities/AutomaticSettings.h"
+#include "storm-cli-utilities/Qvbs.h"
 #include "storm-cli-utilities/print.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -13,7 +14,6 @@
 #include "storm/environment/dd/DdEnvironment.h"
 #include "storm/environment/dd/SylvanDdManagerEnvironment.h"
 #include "storm/exceptions/OptionParserException.h"
-#include "storm/io/Qvbs.h"
 #include "storm/io/file.h"
 #include "storm/languages/SymbolicModelDescription.h"
 #include "storm/languages/jani/Property.h"
