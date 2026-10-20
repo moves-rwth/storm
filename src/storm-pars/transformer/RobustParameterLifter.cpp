@@ -17,7 +17,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/utility/Extremum.h"
@@ -190,8 +189,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     RationalFunction function, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
 
-    utility::solver::Z3SmtSolverFactory factory;
-    auto smtSolver = factory.create(*expressionManager);
+    auto smtSolver = utility::solver::getSmtSolver(*expressionManager);
 
     expressions::RationalFunctionToExpression<storm::RationalFunction> rfte(expressionManager);
 
@@ -204,7 +202,10 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
         exprBounds = exprBounds && expressionManager->rational(0) <= var && var <= expressionManager->rational(1);
     }
 
-    smtSolver->setTimeout(50);
+    if (!smtSolver->setTimeout(50)) {
+        // Without a timeout, the search for zeroes might not terminate in reasonable time.
+        return std::nullopt;
+    }
 
     smtSolver->add(exprBounds);
     smtSolver->add(expression);
@@ -466,6 +467,10 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
                 zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
             } else {
                 zeroes = zeroesSMT(derivative, p);
+                if (!zeroes) {
+                    // The SMT solver could not find the zeroes, e.g., because of a timeout. Fall back to carl's root finder.
+                    zeroes = zeroesCarl(nominatorAsUnivariate, p);
+                }
             }
             STORM_LOG_ERROR_COND(zeroes, "Zeroes of " << derivative << " could not be found.");
             for (auto const& zero : *zeroes) {
