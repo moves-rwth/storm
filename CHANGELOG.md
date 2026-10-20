@@ -9,7 +9,8 @@ Version 2.0.x
 --------------
 
 ### Version 2.0.0 (2026/10)
-- Model checking results now carry upper and lower bounds that can be queried via the API, and sound solution bounds are available for DTMC/MDP model checking methods.
+- Version 2.0 is a major release with numerous breaking changes to the API, command-line options and behaviour.
+- Model checking results now carry upper and lower bounds that can be queried via the API and are included in the command-line output, and sound solution bounds are available for DTMC/MDP model checking methods.
 - Improved model checking of interval MDPs (iMDPs and interval DTMCs): added expected time (`Tmin/max=? [F "target"]`) and cumulative rewards (`Rmin/max=? [C<=k]`), and `Rmin=? [F "target"]` on models without zero-reward end components. Fixed the computation of `Rmin/max=? [F "target"]`.
 - Added a native CVC5 SMT solver backend. The SMT solver is selected in the environment; places without an environment use a solver chosen at compile time.
 - Revised and significantly sped up sparse bisimulation.
@@ -24,18 +25,15 @@ Version 2.0.x
     * Added a region constraint checker.
 - Added merging of equivalent states as a preprocessing step.
 - Added support for the WeakUntil (`W`) and Release (`R`) operators in properties: they are now accepted when parsing JANI, and Storm's formula handling supports them.
-- Improved model building.
+- Faster model building.
 - Added model tolerance: sparse models now store the tolerance used to decide whether a model is valid, for example whether transition probabilities sum to one. It is set from the model builder or a command-line flag, and bisimulation uses it by default. It is independent of the precision used in verification.
 - Counterexamples now support JANI models with multiple locations.
-- Breaking changes:
-    * `--precision` is now interpreted as the distance between the bounds and the value (half-width) in interval iteration and the topological solver. GVI uses relative precision if it is set.
-    * DTMC model checking of conditional probabilities throws an error if the condition is unreachable.
-    * Moved from settings to environments or options in more places (environment factory/builder; storm-dft, storm-gspn, storm-conv, counterexamples, game-based abstraction refinement).
-    * `storm-parsers` is now a library with an explicit API and hidden visibility.
+- `--precision` is now interpreted as the distance between the bounds and the value (half-width) in interval iteration and the topological solver. GVI uses relative precision if it is set.
 - Bug fixes:
     * Incorrect exit rates in DD-based Markov automaton bisimulation quotients.
-    * Early-termination bugs.
+    * Early termination of iterative (min-max) linear equation solvers with custom termination conditions, which terminated only if both bounds satisfied the condition.
     * Hybrid engine with sound computations.
+    * DTMC model checking of conditional probabilities now throws an error if the condition is unreachable.
     * Interval model checking now sets results only for maybe states.
     * JANI parsing of boolean operators over path formulae.
     * DRN parser now throws an error if the order of rewards and labels is wrong.
