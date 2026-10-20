@@ -7,10 +7,10 @@
 #include <vector>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/expressions/BinaryRelationType.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/HashVisitor.h"
 #include "storm/models/sparse/ModelForward.h"
-#include "storm/storage/expressions/BinaryRelationType.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/HashVisitor.h"
 
 namespace storm::expressions {
 class ExpressionManager;

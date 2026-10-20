@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "storm/storage/BitVector.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"

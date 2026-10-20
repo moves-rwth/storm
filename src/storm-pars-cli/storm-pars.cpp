@@ -41,7 +41,7 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/initialize.h"

@@ -3,11 +3,11 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/solver.h"
 
 #ifdef STORM_HAVE_MATHSAT

@@ -7,11 +7,22 @@
 #include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
 #include "storm-gamebased-ar/abstraction/jani/JaniMenuGameAbstractor.h"
 #include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
+#include "storm/dd/DdManager.h"
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidModelException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/VariableSetPredicateSplitter.h"
 #include "storm/io/file.h"
+#include "storm/languages/jani/Automaton.h"
+#include "storm/languages/jani/AutomatonComposition.h"
+#include "storm/languages/jani/Edge.h"
+#include "storm/languages/jani/EdgeDestination.h"
+#include "storm/languages/jani/Location.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/ParallelComposition.h"
+#include "storm/languages/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/results/CheckResult.h"
@@ -22,18 +33,7 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/solver/StandardGameSolver.h"
 #include "storm/solver/SymbolicGameSolver.h"
-#include "storm/storage/ExplicitGameStrategyPair.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/VariableSetPredicateSplitter.h"
-#include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/AutomatonComposition.h"
-#include "storm/storage/jani/Edge.h"
-#include "storm/storage/jani/EdgeDestination.h"
-#include "storm/storage/jani/Location.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
+#include "storm/storage/scheduler/ExplicitGameStrategyPair.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -47,7 +47,7 @@ using storm::gbar::abstraction::SymbolicQuantitativeGameResult;
 using storm::gbar::abstraction::SymbolicQuantitativeGameResultMinMax;
 
 template<storm::dd::DdType Type, typename ModelType>
-GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model,
+GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::languages::SymbolicModelDescription const& model,
                                                                     abstraction::AbstractionOptions const& options,
                                                                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
     : options(options),
@@ -1583,11 +1583,11 @@ std::vector<storm::expressions::Expression> GameBasedMdpModelChecker<Type, Model
 template<storm::dd::DdType Type, typename ModelType>
 storm::OptimizationDirection GameBasedMdpModelChecker<Type, ModelType>::getPlayer1Direction(
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
-    if (preprocessedModel.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC) {
+    if (preprocessedModel.getModelType() == storm::languages::SymbolicModelDescription::ModelType::DTMC) {
         return storm::OptimizationDirection::Maximize;
     } else if (checkTask.isOptimizationDirectionSet()) {
         return checkTask.getOptimizationDirection();
-    } else if (checkTask.isBoundSet() && preprocessedModel.getModelType() != storm::storage::SymbolicModelDescription::ModelType::DTMC) {
+    } else if (checkTask.isBoundSet() && preprocessedModel.getModelType() != storm::languages::SymbolicModelDescription::ModelType::DTMC) {
         return storm::logic::isLowerBound(checkTask.getBoundComparisonType()) ? storm::OptimizationDirection::Minimize : storm::OptimizationDirection::Maximize;
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not derive player 1 optimization direction.");

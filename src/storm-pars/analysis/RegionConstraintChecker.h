@@ -8,8 +8,8 @@
 
 #include "storm-pars/analysis/ConstraintCollector.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storm/expressions/Expression.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/Expression.h"
 
 namespace storm::pars::analysis {
 

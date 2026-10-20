@@ -2,13 +2,13 @@
 
 #include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/RationalFunctionToExpression.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/utility/solver.h"
 
 namespace storm {

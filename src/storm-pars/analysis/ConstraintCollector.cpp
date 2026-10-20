@@ -1,12 +1,12 @@
 #include "storm-pars/analysis/ConstraintCollector.h"
 
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/PolynomialToExpression.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/PolynomialToExpression.h"
 #include "storm/utility/constants.h"
 
 namespace storm::pars::analysis {

@@ -7,7 +7,7 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/MissingLibraryException.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"

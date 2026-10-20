@@ -10,11 +10,11 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQuantitativeGameResultMinMax.h"
 
-#include "storm/storage/expressions/EquivalenceChecker.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/FullPredicateSplitter.h"
+#include "storm/expressions/EquivalenceChecker.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/FullPredicateSplitter.h"
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionOptions.h"
 

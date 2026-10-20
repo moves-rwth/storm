@@ -10,9 +10,9 @@
 
 #include "storm/solver/SmtSolver.h"
 
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/RationalFunctionToExpression.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/RationalFunctionToExpression.h"
 
 #include "storm/utility/constants.h"
 #include "storm/utility/solver.h"

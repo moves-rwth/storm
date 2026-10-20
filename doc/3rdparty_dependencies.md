@@ -26,7 +26,7 @@ See the list below for the steps.
 - Adapt the settings to support the new library. This will typically be `CoreSettings`.
 - Add a dedicated class in Storm:
   - solvers are defined in `storm/solver`
-  - dd libraries are defined in `storm/storage/dd`
+  - dd libraries are defined in `storm/dd`
   - some libraries are defined in `storm/adapters`
 - Add output to `printVersion()` in `src/storm-cli-utilities/print.cpp` which prints information about the library.
 - Add tests for the new library.

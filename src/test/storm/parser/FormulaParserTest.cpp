@@ -6,8 +6,8 @@
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 TEST(FormulaParserTest, LabelTest) {
     storm::parser::FormulaParser formulaParser;

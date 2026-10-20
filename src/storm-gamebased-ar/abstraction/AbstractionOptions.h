@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 namespace storm::gbar {
 namespace abstraction {

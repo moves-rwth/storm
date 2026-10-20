@@ -4,8 +4,8 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/shortestPaths.h"
 
@@ -25,7 +25,7 @@ class KSPTest : public ::testing::Test {
 
 std::shared_ptr<storm::models::sparse::Model<double>> buildExampleModel() {
     std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm";
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     return storm::builder::ExplicitModelBuilder<double>(program).build();
 }

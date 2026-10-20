@@ -6,6 +6,7 @@
 #include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelChecking.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -14,7 +15,6 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/storage/jani/Property.h"
 #include "test/SmtSolverTestUtils.h"
 
 class SparseMaCbMultiObjectiveModelCheckerTest : public ::testing::Test {

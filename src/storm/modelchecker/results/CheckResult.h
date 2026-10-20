@@ -3,8 +3,8 @@
 #include <iosfwd>
 #include <memory>
 
+#include "storm/dd/DdType.h"
 #include "storm/logic/ComparisonType.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace modelchecker {

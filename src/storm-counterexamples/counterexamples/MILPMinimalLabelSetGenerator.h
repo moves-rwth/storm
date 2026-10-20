@@ -10,6 +10,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -19,7 +20,6 @@
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/utility/graph.h"
@@ -986,7 +986,8 @@ class MILPMinimalLabelSetGenerator {
      * formula can be either an unbounded until formula or an eventually formula.
      * @param includeSchedulerCuts Indicates whether the scheduler cuts are added to the MILP.
      */
-    static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
+    static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env,
+                                                                          storm::languages::SymbolicModelDescription const& symbolicModel,
                                                                           storm::models::sparse::Mdp<T> const& mdp,
                                                                           std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                           bool includeSchedulerCuts = CounterexampleOptions().useSchedulerCuts) {

@@ -10,8 +10,8 @@
 
 #include "storm/solver/GameSolver.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 
 namespace storm::modelchecker {

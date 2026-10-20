@@ -8,10 +8,10 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/generator/PrismNextStateGenerator.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/sparse/ValuationTransformer.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/ValuationTransformer.h"
 #include "storm/storage/valuations/Valuations.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
 

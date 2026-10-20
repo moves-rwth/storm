@@ -12,8 +12,8 @@
 #endif
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/expressions/ExpressionVisitor.h"
+#include "storm/expressions/Variable.h"
 
 namespace storm::expressions {
 class BaseExpression;

@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "storm/storage/jani/ModelFeatures.h"
+#include "storm/languages/jani/ModelFeatures.h"
 
 namespace storm {
 namespace converter {

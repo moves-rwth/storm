@@ -14,7 +14,7 @@
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 

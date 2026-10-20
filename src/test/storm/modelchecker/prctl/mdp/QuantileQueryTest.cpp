@@ -6,6 +6,7 @@
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -15,7 +16,6 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/parser/CSVParser.h"
-#include "storm/storage/jani/Property.h"
 
 namespace {
 

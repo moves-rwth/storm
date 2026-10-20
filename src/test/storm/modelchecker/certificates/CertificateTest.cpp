@@ -22,6 +22,7 @@
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/certificates/CertificateAlgorithm.h"
@@ -36,7 +37,6 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace {
 
