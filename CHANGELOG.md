@@ -23,7 +23,7 @@ Version 2.0.x
     * Refactored the monotonicity module.
     * Added a region constraint checker.
 - Added merging of equivalent states as a preprocessing step.
-- Added support for the WeakUntil and Release operators in properties: they are now accepted when parsing JANI, and Storm's formula handling supports them.
+- Added support for the WeakUntil (`W`) and Release (`R`) operators in properties: they are now accepted when parsing JANI, and Storm's formula handling supports them.
 - Improved model building.
 - Added model tolerance: sparse models now store the tolerance used to decide whether a model is valid, for example whether transition probabilities sum to one. It is set from the model builder or a command-line flag, and bisimulation uses it by default. It is independent of the precision used in verification.
 - Counterexamples now support JANI models with multiple locations.
