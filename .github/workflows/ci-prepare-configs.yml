@@ -32,7 +32,7 @@ jobs:
       # When adding a library here, add it to "expectNotHave" of all configs whose environment does not provide it.
       OPTIONAL_LIBS: '["CUDD","CVC5","GLPK","GMM","GUROBI","HIGHS","LIBARCHIVE","MATHSAT","SOPLEX","SPOT","SYLVAN","XERCES","Z3"]'
       # Aggregated defines which are also checked: available if any of the given libraries is available
-      AGGREGATED_LIBS: '{"LP_SOLVER":["GLPK","GUROBI","HIGHS","SOPLEX","Z3"],"DD_LIBRARY":["CUDD","SYLVAN"]}'
+      AGGREGATED_LIBS: '{"LP_SOLVER":["GLPK","GUROBI","HIGHS","SOPLEX","Z3"],"SMT_SOLVER":["CVC5","MATHSAT","Z3"],"DD_LIBRARY":["CUDD","SYLVAN"]}'
     steps:
       - name: Git clone
         uses: actions/checkout@v7

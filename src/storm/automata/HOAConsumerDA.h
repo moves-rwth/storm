@@ -41,8 +41,7 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
 
     HOAConsumerDA() : seenEdges(0) {
         expressionManager.reset(new storm::expressions::ExpressionManager());
-        storm::utility::solver::SmtSolverFactory factory;
-        solver = factory.create(*expressionManager);
+        solver = storm::utility::solver::getSmtSolver(*expressionManager);
     }
 
     ~HOAConsumerDA() {

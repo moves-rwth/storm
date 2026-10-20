@@ -49,8 +49,8 @@ class SparseDtmcParameterLiftingMonotonicityTest : public ::testing::Test {
         return _environment;
     }
     virtual void SetUp() {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
         storm::clearRFVariablePool();
     }
