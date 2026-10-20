@@ -14,6 +14,7 @@
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -25,6 +26,7 @@
 #include "storm/solver/EigenLinearEquationSolver.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "test/storm/modelchecker/QuantitativeResultExpectations.h"
 
 namespace {
 
@@ -188,7 +190,7 @@ class HybridSylvanGmmxxGmresEnvironment {
 #endif
 
 template<typename TestType>
-class CtmcCslModelCheckerTest : public ::testing::Test {
+class CtmcCslModelCheckerTest : public ::testing::Test, public storm::test::QuantitativeResultExpectations<CtmcCslModelCheckerTest<TestType>, TestType> {
    public:
     typedef typename TestType::ValueType ValueType;
     typedef typename storm::models::sparse::Ctmc<ValueType> SparseModelType;
@@ -356,25 +358,25 @@ TYPED_TEST(CtmcCslModelCheckerTest, Cluster) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("5.5461254704419085E-5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("5.5461254704419085E-5"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("2.3397873548343415E-6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("2.3397873548343415E-6"));
 
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("0.001105335651670241"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.001105335651670241"));
 
         result = checker->check(this->env(), tasks[3]);
-        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
 
         result = checker->check(this->env(), tasks[4]);
-        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
 
         result = checker->check(this->env(), tasks[5]);
-        EXPECT_NEAR(this->parseNumber("0.9999999033633374"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.9999999033633374"));
 
         result = checker->check(this->env(), tasks[6]);
-        EXPECT_NEAR(this->parseNumber("0.8602815057967503"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.8602815057967503"));
     });
 }
 
@@ -396,19 +398,39 @@ TYPED_TEST(CtmcCslModelCheckerTest, Embedded) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("0.0019216435246119591"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.0019216435246119591"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("3.7079151806696567E-6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("3.7079151806696567E-6"));
 
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("0.001556839327673734"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.001556839327673734"));
 
         result = checker->check(this->env(), tasks[3]);
-        EXPECT_NEAR(this->parseNumber("4.429620626755424E-5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("4.429620626755424E-5"));
 
         result = checker->check(this->env(), tasks[4]);
-        EXPECT_NEAR(this->parseNumber("2.7745274082080154"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("2.7745274082080154"));
+    });
+}
+
+TYPED_TEST(CtmcCslModelCheckerTest, NextProbabilities) {
+    std::string formulasString = "P=? [ X !\"down\"]";
+    formulasString += "; P=? [ X \"fail_sensors\"]";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    this->execute(model, [&]() {
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        result = checker->check(this->env(), tasks[0]);
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1579142/1579145"));
+
+        result = checker->check(this->env(), tasks[1]);
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("0"));
     });
 }
 
@@ -431,22 +453,22 @@ TYPED_TEST(CtmcCslModelCheckerTest, Tandem) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("0.015446370562428037"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.015446370562428037"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("0.999999837225515"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.999999837225515"));
 
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
 
         result = checker->check(this->env(), tasks[3]);
-        EXPECT_NEAR(this->parseNumber("5.679243850315877"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("5.679243850315877"));
 
         result = checker->check(this->env(), tasks[4]);
-        EXPECT_NEAR(this->parseNumber("55.44792186036232"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("55.44792186036232"));
 
         result = checker->check(this->env(), tasks[5]);
-        EXPECT_NEAR(this->parseNumber("262.85103824276308"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("262.85103824276308"));
     });
 }
 
@@ -469,19 +491,19 @@ TYPED_TEST(CtmcCslModelCheckerTest, simple1) {
         uint64_t propertyIndex = 0;
         auto expected = this->parseNumber("0.9502129316");  // integrate  6* e^(-6*t) dt from 0 to 0.5 = 1 - 1/(e^3)
         result = checker->check(this->env(), tasks[propertyIndex++]);
-        EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, expected);
 
         expected = this->parseNumber("0.075198060651");  // integrate min(t,0.1) * 6* e^(-6*t) dt from 0 to infty = 1/6 - 1/(6*e^0.6)
         result = checker->check(this->env(), tasks[propertyIndex++]);
-        EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, expected);
 
         expected = this->parseNumber("0.1662535413");  // =  1/6 - 1/(6*e^6)
         result = checker->check(this->env(), tasks[propertyIndex++]);
-        EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, expected);
 
         expected = this->parseNumber("0.16666666667");  // = 1/6 - 1/(6*e^60)
         result = checker->check(this->env(), tasks[propertyIndex++]);
-        EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, expected);
     });
 }
 
@@ -501,7 +523,7 @@ TYPED_TEST(CtmcCslModelCheckerTest, simple2) {
     // Total reward formulas are currently not supported for non-sparse models.
     if (this->isSparseModel()) {
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("23/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("23/8"));
 
         result = checker->check(this->env(), tasks[1]);
         EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
@@ -551,7 +573,7 @@ TYPED_TEST(CtmcCslModelCheckerTest, LtlProbabilitiesEmbedded) {
     if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
 
-        EXPECT_NEAR(this->parseNumber("6201111489217/6635130141055"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("6201111489217/6635130141055"));
 
         result = checker->check(this->env(), tasks[1]);
         EXPECT_NEAR(this->parseNumber(
@@ -568,7 +590,7 @@ TYPED_TEST(CtmcCslModelCheckerTest, LtlProbabilitiesEmbedded) {
                     this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("6201111489217/6635130141055"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("6201111489217/6635130141055"));
 
         result = checker->check(this->env(), tasks[3]);
         EXPECT_TRUE(this->getQualitativeResultAtInitialState(model, result));
@@ -615,10 +637,10 @@ TYPED_TEST(CtmcCslModelCheckerTest, LtlProbabilitiesPolling) {
     // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
     if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("80400/160801"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("80400/160801"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("601/80601"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("601/80601"));
 
     } else {
         EXPECT_FALSE(checker->canHandle(tasks[0]));
@@ -646,10 +668,10 @@ TYPED_TEST(CtmcCslModelCheckerTest, HOAProbabilitiesPolling) {
     // Not supported in all engines (Hybrid,  PrismDd, JaniDd)
     if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse) {
         result = checker->check(tasks[0]);
-        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
 
         result = checker->check(tasks[1]);
-        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
     } else {
         EXPECT_FALSE(checker->canHandle(tasks[0]));
     }

@@ -13,6 +13,7 @@
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -23,6 +24,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/jani/Property.h"
+#include "test/storm/modelchecker/QuantitativeResultExpectations.h"
 
 namespace {
 
@@ -121,7 +123,8 @@ class SparseRationalRationalSearchEnvironment {
 };
 
 template<typename TestType>
-class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
+class MarkovAutomatonCslModelCheckerTest : public ::testing::Test,
+                                           public storm::test::QuantitativeResultExpectations<MarkovAutomatonCslModelCheckerTest<TestType>, TestType> {
    public:
     typedef typename TestType::ValueType ValueType;
     typedef typename storm::models::sparse::MarkovAutomaton<ValueType> SparseModelType;
@@ -275,14 +278,15 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, server) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("11/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        // Plain value iteration bounds an expected time from below only, so do not insist on an enclosure here.
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("11/6"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("2/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectBoundedResultAtInitialState(model, result, this->parseNumber("2/3"));
 
         if (!storm::utility::isZero(this->precision())) {
             result = checker->check(this->env(), tasks[2]);
-            EXPECT_NEAR(this->parseNumber("0.455504"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.455504"));
         }
     });
 }
@@ -303,10 +307,10 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple) {
 
         if (!storm::utility::isZero(this->precision())) {
             result = checker->check(this->env(), tasks[0]);
-            EXPECT_NEAR(this->parseNumber("0.6321205588"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.6321205588"));
 
             result = checker->check(this->env(), tasks[1]);
-            EXPECT_NEAR(this->parseNumber("0.727468207"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.727468207"));
         }
     });
 }
@@ -336,22 +340,22 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple2) {
         // Total Reward Formulas are not supported in the hybrid engine (for now).
 
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("2"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("2"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
 
         result = checker->check(this->env(), tasks[2]);
         EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
 
         result = checker->check(this->env(), tasks[3]);
-        EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("7/8"));
 
         result = checker->check(this->env(), tasks[4]);
         EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
 
         result = checker->check(this->env(), tasks[5]);
-        EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("7/8"));
 
         result = checker->check(this->env(), tasks[6]);
         EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
@@ -359,7 +363,7 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple2) {
 
     // Checking LRA properties exactly requires an exact LP solver.
     result = checker->check(this->env(), tasks[7]);
-    EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
 
     result = checker->check(this->env(), tasks[8]);
     EXPECT_NEAR(this->parseNumber("407"), this->getQuantitativeResultAtInitialState(model, result),
@@ -387,10 +391,10 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, erlang) {
 
         if (!storm::utility::isZero(this->precision())) {
             result = checker->check(this->env(), tasks[0]);
-            EXPECT_NEAR(this->parseNumber("0.13212055882856"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.13212055882856"));
 
             result = checker->check(this->env(), tasks[1]);
-            EXPECT_NEAR(this->parseNumber("0.50066835807513"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0.50066835807513"));
         }
     });
 }
@@ -414,16 +418,16 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, LtlSimple) {
     // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
     if (TypeParam::engine == MaEngine::PrismSparse || TypeParam::engine == MaEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("1/10"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/10"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("1/5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/5"));
 
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("1/10"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/10"));
 
         result = checker->check(this->env(), tasks[3]);
-        EXPECT_NEAR(this->parseNumber("9/10"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("9/10"));
 
     } else {
         EXPECT_FALSE(checker->canHandle(tasks[0]));
@@ -451,10 +455,10 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, HOASimple) {
     // Not supported in all engines (Hybrid,  PrismDd, JaniDd)
     if (TypeParam::engine == MaEngine::PrismSparse || TypeParam::engine == MaEngine::JaniSparse) {
         result = checker->check(tasks[0]);
-        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
 
         result = checker->check(tasks[1]);
-        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
     } else {
         EXPECT_FALSE(checker->canHandle(tasks[0]));
     }

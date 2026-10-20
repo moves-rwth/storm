@@ -8,6 +8,8 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
+#include "storm/modelchecker/prctl/helper/SparseDeterministicModelCheckingHelperReturnType.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -62,6 +64,40 @@ ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(stor
     requires(!std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>)
     : states(std::move(states)), values(storm::utility::widen(std::move(values))) {
     STORM_LOG_ASSERT(this->states.getNumberOfSetBits() == this->values.size(), "Expected one value per selected state.");
+}
+
+template<typename ValueType>
+ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(
+    helper::SparseDeterministicModelCheckingHelperReturnType<ExtendedValueType>&& helperResult)
+    : ExplicitQuantitativeCheckResult(std::move(helperResult.values)) {
+    this->setBounds(std::move(helperResult.solutionBounds));
+}
+
+template<typename ValueType>
+ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(helper::SparseDeterministicModelCheckingHelperReturnType<ValueType>&& helperResult)
+    requires(!std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>)
+    : ExplicitQuantitativeCheckResult(std::move(helperResult.values)) {
+    this->setBounds(std::move(helperResult.solutionBounds));
+}
+
+template<typename ValueType>
+ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(
+    helper::MDPSparseModelCheckingHelperReturnType<ValueType, ExtendedValueType>&& helperResult)
+    : ExplicitQuantitativeCheckResult(std::move(helperResult.values)) {
+    this->setBounds(std::move(helperResult.solutionBounds));
+    if (helperResult.scheduler) {
+        this->setScheduler(std::move(helperResult.scheduler));
+    }
+}
+
+template<typename ValueType>
+ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(helper::MDPSparseModelCheckingHelperReturnType<ValueType, ValueType>&& helperResult)
+    requires(!std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>)
+    : ExplicitQuantitativeCheckResult(std::move(helperResult.values)) {
+    this->setBounds(std::move(helperResult.solutionBounds));
+    if (helperResult.scheduler) {
+        this->setScheduler(std::move(helperResult.scheduler));
+    }
 }
 
 template<typename ValueType>
