@@ -7,7 +7,7 @@
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/solver/SolutionBounds.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/valuations/Valuations.h"
 #include "storm/utility/ExtendedNumber.h"

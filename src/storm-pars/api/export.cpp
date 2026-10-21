@@ -5,7 +5,7 @@
 #include <iterator>
 #include <vector>
 
-#include "storm/analysis/GraphConditions.h"
+#include "storm-pars/analysis/ConstraintCollector.h"
 #include "storm/io/file.h"
 
 namespace storm::pars {
@@ -13,7 +13,7 @@ namespace api {
 
 namespace {
 
-void writeConstraints(std::ostream& filestream, storm::analysis::ConstraintCollector::ConstraintSet const& constraints) {
+void writeConstraints(std::ostream& filestream, storm::pars::analysis::ConstraintCollector::ConstraintSet const& constraints) {
     std::vector<std::string> stringConstraints;
     stringConstraints.reserve(constraints.size());
     std::transform(constraints.begin(), constraints.end(), std::back_inserter(stringConstraints),
@@ -25,7 +25,7 @@ void writeConstraints(std::ostream& filestream, storm::analysis::ConstraintColle
 
 template<>
 void exportParametricResultToFile(std::optional<storm::RationalFunction> result,
-                                  storm::OptionalRef<storm::analysis::ConstraintCollector const> const& constraintCollector, std::string const& path) {
+                                  storm::OptionalRef<storm::pars::analysis::ConstraintCollector const> const& constraintCollector, std::string const& path) {
     std::ofstream filestream;
     storm::io::openFile(path, filestream);
     if (constraintCollector.has_value()) {

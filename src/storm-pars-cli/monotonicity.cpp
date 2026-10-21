@@ -85,13 +85,13 @@ void analyzeMonotonicity(storm::Environment const& env, std::shared_ptr<storm::m
                 auto res = storm::analysis::MonotonicityChecker<ValueType>::checkDerivative(valuation.derivative(var), regions[0]);
 
                 if (res.first && res.second) {
-                    monRes.addMonotonicityResult(var, analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Constant);
+                    monRes.addMonotonicityResult(var, storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Constant);
                 } else if (res.first) {
-                    monRes.addMonotonicityResult(var, analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Incr);
+                    monRes.addMonotonicityResult(var, storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Incr);
                 } else if (res.second) {
-                    monRes.addMonotonicityResult(var, analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Decr);
+                    monRes.addMonotonicityResult(var, storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Decr);
                 } else {
-                    monRes.addMonotonicityResult(var, analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Not);
+                    monRes.addMonotonicityResult(var, storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Not);
                 }
             }
             if (monSettings.isExportMonotonicitySet()) {

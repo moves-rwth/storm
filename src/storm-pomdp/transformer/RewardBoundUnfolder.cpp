@@ -4,6 +4,7 @@
 #include <queue>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/BinaryBooleanStateFormula.h"
 #include "storm/logic/BoundedUntilFormula.h"
@@ -12,7 +13,6 @@
 #include "storm/logic/UntilFormula.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/macros.h"

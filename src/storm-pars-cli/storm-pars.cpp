@@ -1,12 +1,21 @@
-#include "storm-pars/api/storm-pars.h"
+#include <memory>
+#include <optional>
+#include <sstream>
+#include <type_traits>
+
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/feasibility.h"
+#include "storm-pars-cli/graphPreservation.h"
 #include "storm-pars-cli/monotonicity.h"
 #include "storm-pars-cli/print.h"
 #include "storm-pars-cli/sampling.h"
 #include "storm-pars-cli/solutionFunctions.h"
+#include "storm-pars/analysis/ConstraintCollector.h"
+#include "storm-pars/analysis/GraphPreservationStatus.h"
+#include "storm-pars/analysis/RegionConstraintChecker.h"
 #include "storm-pars/api/region.h"
+#include "storm-pars/api/storm-pars.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
@@ -32,7 +41,7 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/initialize.h"
@@ -58,23 +67,6 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
         result = storm::api::parseRegions<ValueType>(regionSettings.getRegionString(), *model);
     } else if (regionSettings.isRegionBoundSet()) {
         result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
-    }
-    if (regionSettings.isAssumeGraphPreservingSet()) {
-        // We want to warn the user in case the model is actually not graph preserving.
-        // However, determining graph-preservingness precisely is hard.
-        // As an approximation, we only check if the region intersects 0 or 1.
-        for (auto const& region : result) {
-            for (auto const& variable : region.getVariables()) {
-                if (region.getLowerBoundary(variable) <= storm::utility::zero<typename storm::utility::parametric::CoefficientType<ValueType>::type>() ||
-                    region.getUpperBoundary(variable) >= storm::utility::one<typename storm::utility::parametric::CoefficientType<ValueType>::type>()) {
-                    STORM_LOG_WARN(
-                        "Region "
-                        << region
-                        << " appears to not preserve the graph structure of the parametric model. If this is the case, set --assume-graph-preserving false.");
-                    break;
-                }
-            }
-        }
     }
     return result;
 }
@@ -326,11 +318,8 @@ void verifyRegionWithSparseEngine(storm::Environment const& env, std::shared_ptr
     auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     auto engine = rvs.getRegionCheckEngine();
-    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
-
-    STORM_LOG_THROW(graphPreserving || engine == storm::modelchecker::RegionCheckEngine::RobustParameterLifting, storm::exceptions::NotSupportedException,
-                    "Selected region verification engine (--regionverif:engine) requires the assumption that the region is graph-preserving "
-                    "(--assume-graph-preserving true).");
+    auto const graphPreservationStatus =
+        storm::pars::establishGraphPreservation<ValueType>(model, regions, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
 
     auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
@@ -353,7 +342,7 @@ void verifyRegionWithSparseEngine(storm::Environment const& env, std::shared_ptr
         monotonicitySettings,
         discreteVariables,
         true,  // allow model simplification
-        graphPreserving,
+        graphPreservationStatus,
         false  // preconditions not yet validated
     };
 
@@ -400,7 +389,8 @@ void parameterSpacePartitioningWithSparseEngine(storm::Environment const& env, s
         splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
     }
 
-    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
+    auto const graphPreservationStatus =
+        storm::pars::establishGraphPreservation<ValueType>(model, regions, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
 
     auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
@@ -425,7 +415,7 @@ void parameterSpacePartitioningWithSparseEngine(storm::Environment const& env, s
         monotonicitySettings,
         discreteVariables,
         true,  // allow model simplification
-        graphPreserving,
+        graphPreservationStatus,
         false  // preconditions not yet validated
     };
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(

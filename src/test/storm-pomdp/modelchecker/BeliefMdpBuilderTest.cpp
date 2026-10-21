@@ -67,6 +67,35 @@ class BeliefMdpBuilderTest : public ::testing::Test {
 using MatrixValueTypes = ::testing::Types<double, storm::RationalNumber>;
 TYPED_TEST_SUITE(BeliefMdpBuilderTest, MatrixValueTypes, );
 
+TYPED_TEST(BeliefMdpBuilderTest, PreservesRequestedChoiceLabelingWithoutExploredRows) {
+    for (bool const terminalInitialBelief : {false, true}) {
+        SCOPED_TRACE(terminalInitialBelief);
+        auto info = TestFixture::template makeInfo<typename TestFixture::StandardInfo>(1);
+        info.initialBeliefId = 0;
+        if (terminalInitialBelief) {
+            info.terminalBeliefValues.emplace(0, TestFixture::value(1));
+        }
+        ASSERT_EQ(info.matrix.rows(), 0ul);
+        ASSERT_FALSE(info.matrix.hasChoiceLabels());
+
+        for (bool const generateChoiceLabeling : {false, true}) {
+            SCOPED_TRACE(generateChoiceLabeling);
+            info.generateChoiceLabeling = generateChoiceLabeling;
+            auto const [mdp, mapping] = TestFixture::build(info);
+            ASSERT_EQ(mdp->hasChoiceLabeling(), generateChoiceLabeling);
+            EXPECT_EQ(mdp->getNumberOfChoices(), 3ul);
+            EXPECT_EQ((std::unordered_map<uint64_t, BeliefId>{{0, 0}}), mapping);
+            if (generateChoiceLabeling) {
+                auto const& labeling = mdp->getChoiceLabeling();
+                EXPECT_EQ(terminalInitialBelief ? std::set<std::string>{} : std::set<std::string>{"cutoff"}, labeling.getLabelsOfChoice(0));
+                for (uint64_t choice : {1ul, 2ul}) {
+                    EXPECT_EQ((std::set<std::string>{"__loop__"}), labeling.getLabelsOfChoice(choice));
+                }
+            }
+        }
+    }
+}
+
 TYPED_TEST(BeliefMdpBuilderTest, MapsSuccessorsInEveryOrderAndPreservesZeros) {
     auto info = TestFixture::template makeInfo<typename TestFixture::StandardInfo>(3);
     info.exploredBeliefs = {{0, 2}, {1, 0}, {2, 1}};

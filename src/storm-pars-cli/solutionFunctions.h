@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdType.h"
 #include "storm/models/sparse/ModelForward.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 class Environment;

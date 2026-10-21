@@ -13,7 +13,7 @@
 #include "storm/api/verification.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/utility/constants.h"
 
 namespace {
@@ -49,8 +49,8 @@ class SparseDtmcParameterLiftingMonotonicityTest : public ::testing::Test {
         return _environment;
     }
     virtual void SetUp() {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
         storm::clearRFVariablePool();
     }
@@ -106,17 +106,17 @@ void checkBrpMonotonicity(storm::Environment const& env, storm::modelchecker::Re
     // Reachability order, as it is already done building we don't need to recreate the order for each region
     storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType> monHelper(storm::Environment(), data.model, data.formulas, {});
     auto monRes = monHelper.checkMonotonicityInBuild(std::cout);
-    auto order = monRes.begin()->first;
+    auto order = monRes.front().order;
     ASSERT_EQ(order->getNumberOfAddedStates(), data.model->getTransitionMatrix().getColumnCount());
     ASSERT_TRUE(order->getDoneBuilding());
 
     // Modelcheckers
     auto regionCheckerMon = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true, true, false,
-        storm::api::MonotonicitySetting(true));
+        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true,
+        storm::pars::analysis::GraphPreservationStatus::GraphPreserving, false, storm::api::MonotonicitySetting(true));
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true, true, false,
-        storm::api::MonotonicitySetting(false));
+        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true,
+        storm::pars::analysis::GraphPreservationStatus::GraphPreserving, false, storm::api::MonotonicitySetting(false));
 
     // start testing
     for (auto const& regionString : regionStrings) {
@@ -133,18 +133,18 @@ void checkSimpleMonotonicity(storm::Environment const& env, storm::modelchecker:
         data.model->getTransitionMatrix().printAsMatlabMatrix(std::cout);
     }
     storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType> monHelper(storm::Environment(), data.model, data.formulas, {});
-    auto order = monHelper.checkMonotonicityInBuild(std::cout).begin()->first;
+    auto order = monHelper.checkMonotonicityInBuild(std::cout).front().order;
     if (assertDoneBuilding) {
         ASSERT_TRUE(order->getDoneBuilding());
     }
 
     // Modelcheckers
     auto regionCheckerMon = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true, true, false,
-        storm::api::MonotonicitySetting(true));
+        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true,
+        storm::pars::analysis::GraphPreservationStatus::GraphPreserving, false, storm::api::MonotonicitySetting(true));
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true, true, false,
-        storm::api::MonotonicitySetting(false));
+        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true,
+        storm::pars::analysis::GraphPreservationStatus::GraphPreserving, false, storm::api::MonotonicitySetting(false));
 
     // Start testing
     for (auto const& regionString : regionStrings) {

@@ -10,6 +10,7 @@
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -24,7 +25,6 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/storage/jani/Property.h"
 
 namespace {
 

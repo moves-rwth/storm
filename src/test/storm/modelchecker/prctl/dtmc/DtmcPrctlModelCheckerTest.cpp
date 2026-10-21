@@ -13,6 +13,7 @@
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -29,7 +30,6 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/EigenLinearEquationSolver.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace {
 
@@ -527,8 +527,8 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
     DtmcPrctlModelCheckerTest() : _environment(TestType::createEnvironment()) {}
 
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
         if constexpr (TestType::engine == DtmcEngine::Hybrid || TestType::engine == DtmcEngine::PrismDd || TestType::engine == DtmcEngine::JaniDd) {
             TestType::checkLibraryAvailable();
@@ -833,8 +833,8 @@ TEST(DtmcPrctlModelCheckerTest, BoundedReachability) {
 }
 
 TEST(DtmcPrctlModelCheckerTest, AllUntilProbabilities) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     std::string formulasString = "P=? [F \"one\"]";
     formulasString += "; P=? [F \"two\"]";

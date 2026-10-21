@@ -29,7 +29,7 @@
 #include "storm/models/ModelBase.h"
 #include "storm/models/symbolic/Model.h"
 
-#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/languages/SymbolicModelDescription.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -60,7 +60,7 @@ storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> createTask(std:
 //
 template<typename ValueType>
 std::unique_ptr<storm::modelchecker::CheckResult> verifyWithExplorationEngine(storm::Environment const& env,
-                                                                              storm::storage::SymbolicModelDescription const& model,
+                                                                              storm::languages::SymbolicModelDescription const& model,
                                                                               storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     if (!std::is_same_v<ValueType, double>) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exploration engine does not support data type.");
@@ -89,7 +89,7 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithExplorationEngine(st
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::modelchecker::CheckResult> verifyWithExplorationEngine(storm::storage::SymbolicModelDescription const& model,
+std::unique_ptr<storm::modelchecker::CheckResult> verifyWithExplorationEngine(storm::languages::SymbolicModelDescription const& model,
                                                                               storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     Environment env;
     return verifyWithExplorationEngine(env, model, task);

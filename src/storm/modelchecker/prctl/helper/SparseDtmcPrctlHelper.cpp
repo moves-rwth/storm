@@ -16,7 +16,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
@@ -673,7 +673,10 @@ SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeReachabi
                 // The copy of result supplies the exact values outside the maybe states.
                 auto embedBound = [&result, &maybeStates](std::vector<SolutionType> const& boundForMaybeStates) {
                     std::vector<ExtendedSolutionType> bound(result);
-                    storm::utility::vector::setVectorValues(bound, maybeStates, boundForMaybeStates);
+                    STORM_LOG_ASSERT(boundForMaybeStates.size() == bound.size(), "Dimensions do not match.");
+                    for (auto const state : maybeStates) {
+                        bound[state] = boundForMaybeStates[state];
+                    }
                     return bound;
                 };
                 solutionBounds = boundsForMaybeStates.transform(embedBound);

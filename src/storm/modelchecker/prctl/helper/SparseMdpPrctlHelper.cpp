@@ -20,8 +20,8 @@
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
@@ -1536,7 +1536,13 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
                 // The copy of result supplies the exact values outside the maybe states.
                 auto embedBound = [&result, &qualitativeStateSets](std::vector<SolutionType> const& boundForMaybeStates) {
                     std::vector<ExtendedSolutionType> bound(result);
-                    storm::utility::vector::setVectorValues(bound, qualitativeStateSets.maybeStates, boundForMaybeStates);
+                    if constexpr (storm::IsIntervalType<ValueType>) {
+                        // For interval models, the bounds (like the solution) have an entry for every state. We only take the bounds of the maybe states.
+                        storm::utility::vector::setVectorValues(bound, qualitativeStateSets.maybeStates,
+                                                                storm::utility::vector::filterVector(boundForMaybeStates, qualitativeStateSets.maybeStates));
+                    } else {
+                        storm::utility::vector::setVectorValues(bound, qualitativeStateSets.maybeStates, boundForMaybeStates);
+                    }
                     return bound;
                 };
                 resultBounds = resultForMaybeStates.solutionBounds.transform(embedBound);
