@@ -7,8 +7,8 @@
 #include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 #include "storm/transformer/DAProductBuilder.h"
 #include "storm/transformer/SubsystemBuilder.h"
 

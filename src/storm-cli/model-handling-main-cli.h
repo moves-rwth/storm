@@ -11,9 +11,11 @@
 #include "storm-gamebased-ar/api/verification.h"
 #include "storm-parsers/parser/ExpressionParser.h"
 #include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitCertificateCheckResult.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/settings/modules/AbstractionSettings.h"
+#include "storm/settings/modules/CertificationSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
@@ -24,7 +26,7 @@ namespace cli {
 inline void exportSymbolicInput(SymbolicInput const& input) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     if (input.model && input.model.get().isJaniModel()) {
-        storm::storage::SymbolicModelDescription const& model = input.model.get();
+        storm::languages::SymbolicModelDescription const& model = input.model.get();
         if (ioSettings.isExportJaniDotSet()) {
             storm::api::exportJaniModelAsDot(model.asJaniModel(), ioSettings.getExportJaniDotFilename());
         }
@@ -67,6 +69,9 @@ inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseMode
     auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
     if (counterexampleSettings.isMinimalCommandSetGenerationSet()) {
         bool useMilp = counterexampleSettings.isUseMilpBasedMinimalCommandSetGenerationSet();
+        storm::counterexamples::SMTMinimalLabelSetGenerator<double>::Options maxSmtOptions(true);
+        maxSmtOptions.encodeReachability = counterexampleSettings.isEncodeReachabilitySet();
+        maxSmtOptions.useDynamicConstraints = counterexampleSettings.isUseDynamicConstraintsSet();
         for (auto const& property : input.properties) {
             std::shared_ptr<storm::counterexamples::Counterexample> counterexample;
             printComputingCounterexample(property);
@@ -74,19 +79,21 @@ inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseMode
             if (useMilp) {
                 STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException,
                                 "Counterexample generation using MILP is currently only supported for MDPs.");
-                counterexample = storm::api::computeHighLevelCounterexampleMilp(
-                    mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                counterexample = storm::api::computeHighLevelCounterexampleMilp(mpi.env, input.model.get(),
+                                                                                sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(),
+                                                                                property.getRawFormula(), counterexampleSettings.isUseSchedulerCutsSet());
             } else {
                 STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp),
                                 storm::exceptions::NotSupportedException,
                                 "Counterexample generation using MaxSAT is currently only supported for discrete-time models.");
 
                 if (sparseModel->isOfType(storm::models::ModelType::Dtmc)) {
-                    counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(
-                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
+                    counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(mpi.env, input.model.get(),
+                                                                                      sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(),
+                                                                                      property.getRawFormula(), maxSmtOptions);
                 } else {
                     counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(
-                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula(), maxSmtOptions);
                 }
             }
             watch.stop();
@@ -174,6 +181,10 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 STORM_PRINT(".");
             }
         }
+    } else if (result->isExplicitCertificateCheckResult()) {
+        STORM_PRINT(*result);
+        STORM_LOG_WARN_COND(ft == storm::modelchecker::FilterType::VALUES,
+                            "\nIgnored non-default property filter " << storm::modelchecker::toString(ft) << " for certificate result.");
     } else {
         switch (ft) {
             case storm::modelchecker::FilterType::VALUES:
@@ -428,13 +439,39 @@ inline std::vector<std::vector<storm::expressions::Expression>> parseInjectedRef
     return injectedRefinementPredicates;
 }
 
+inline storm::gbar::api::AbstractionRefinementOptions getAbstractionRefinementOptions(
+    storm::expressions::ExpressionManager const* expressionManager = nullptr) {
+    storm::settings::modules::AbstractionSettings const& settings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
+    storm::gbar::api::AbstractionRefinementOptions options;
+    if (expressionManager != nullptr) {
+        options.constraints = parseConstraints(*expressionManager, settings.getConstraintString());
+        options.injectedRefinementPredicates = parseInjectedRefinementPredicates(*expressionManager, settings.getInjectedRefinementPredicates());
+    }
+    options.restrictToRelevantStates = settings.isRestrictToRelevantStatesSet();
+    options.restrictToValidBlocks = settings.getValidBlockMode() == storm::settings::modules::AbstractionSettings::ValidBlockMode::BlockEnumeration;
+    options.useDecomposition = settings.isUseDecompositionSet();
+    options.useInterpolation = settings.isUseInterpolationSet();
+    options.splitMode = settings.getSplitMode();
+    options.pivotSelectionHeuristic = settings.getPivotSelectionHeuristic();
+    options.rankRefinementPredicates = settings.isRankRefinementPredicatesSet();
+    options.useEagerRefinement = settings.isUseEagerRefinementSet();
+    options.addAllGuards = settings.isAddAllGuardsSet();
+    options.addAllInitialExpressions = settings.isAddAllInitialExpressionsSet();
+    options.precision = settings.getPrecision();
+    options.relativeTerminationCriterion = settings.getRelativeTerminationCriterion();
+    options.solveMode = settings.getSolveMode();
+    options.reuseMode = settings.getReuseMode();
+    options.maximalNumberOfAbstractions = settings.getMaximalAbstractionCount();
+    options.fixPlayer1Strategy = settings.isFixPlayer1StrategySet();
+    options.fixPlayer2Strategy = settings.isFixPlayer2StrategySet();
+    options.debug = settings.isDebugSet();
+    return options;
+}
+
 template<storm::dd::DdType DdType, typename ValueType>
 void verifyWithAbstractionRefinementEngine(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
-    storm::settings::modules::AbstractionSettings const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
-    storm::gbar::api::AbstractionRefinementOptions options(
-        parseConstraints(input.model->getManager(), abstractionSettings.getConstraintString()),
-        parseInjectedRefinementPredicates(input.model->getManager(), abstractionSettings.getInjectedRefinementPredicates()));
+    storm::gbar::api::AbstractionRefinementOptions options = getAbstractionRefinementOptions(&input.model->getManager());
 
     verifyProperties<ValueType>(input, [&input, &options, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                 std::shared_ptr<storm::logic::Formula const> const& states) {
@@ -460,9 +497,10 @@ template<typename ValueType>
 void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& sparseModel, SymbolicInput const& input,
                  ModelProcessingInformation const& mpi) {
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+    bool const produceCertificate = storm::settings::getModule<storm::settings::modules::CertificationSettings>().isProduceCertificateSet();
     bool const preferEliminationChecker = storm::cli::preferEliminationChecker();
-    auto verificationCallback = [&sparseModel, &ioSettings, &mpi, preferEliminationChecker](std::shared_ptr<storm::logic::Formula const> const& formula,
-                                                                                            std::shared_ptr<storm::logic::Formula const> const& states) {
+    auto verificationCallback = [&sparseModel, &ioSettings, &mpi, preferEliminationChecker, produceCertificate](
+                                    std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
         auto createTask = [&ioSettings](auto const& f, bool onlyInitialStates) {
             if constexpr (storm::IsIntervalType<ValueType>) {
                 STORM_LOG_THROW(ioSettings.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
@@ -477,6 +515,9 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
         auto task = createTask(formula, filterForInitialStates);
         if (ioSettings.isExportSchedulerSet()) {
             task.setProduceSchedulers(true);
+        }
+        if (produceCertificate) {
+            task.setProduceCertificate(true);
         }
         std::unique_ptr<storm::modelchecker::CheckResult> result =
             storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, task, preferEliminationChecker);
@@ -495,6 +536,17 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
     };
     uint64_t exportCount = 0;  // this number will be prepended to the export file name of schedulers and/or check results in case of multiple properties.
     auto postprocessingCallback = [&sparseModel, &ioSettings, &input, &exportCount](std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
+        // Certificate validity check
+        if (result->isExplicitCertificateCheckResult()) {
+            if constexpr (storm::modelchecker::SupportsCertificates<ValueType>) {
+                STORM_PRINT_AND_LOG("Certificate validity check ... ");
+                storm::utility::Stopwatch chkValid(true);
+                bool const valid = result->template asExplicitCertificateCheckResult<ValueType>().checkValidity(*sparseModel);
+                chkValid.stop();
+                STORM_PRINT_AND_LOG((valid ? "valid" : "invalid") << " (time: " << chkValid << ")\n");
+            }
+        }
+
         // Scheduler export
         STORM_LOG_WARN_COND(!ioSettings.isExportSchedulerSet() || result->hasScheduler(), "Scheduler requested but could not be generated.");
         if (ioSettings.isExportSchedulerSet() && result->hasScheduler()) {
@@ -637,12 +689,13 @@ void verifyWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, V
 template<storm::dd::DdType DdType, typename ValueType>
 void verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& symbolicModel, SymbolicInput const& input,
                                            ModelProcessingInformation const& mpi) {
-    verifyProperties<ValueType>(
-        input, [&symbolicModel, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
-            STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
-            return storm::gbar::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, symbolicModel,
-                                                                                              storm::api::createTask<ValueType>(formula, true));
-        });
+    storm::gbar::api::AbstractionRefinementOptions options = getAbstractionRefinementOptions();
+    verifyProperties<ValueType>(input, [&symbolicModel, &mpi, &options](std::shared_ptr<storm::logic::Formula const> const& formula,
+                                                                        std::shared_ptr<storm::logic::Formula const> const& states) {
+        STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
+        return storm::gbar::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, symbolicModel,
+                                                                                          storm::api::createTask<ValueType>(formula, true), options);
+    });
 }
 
 template<storm::dd::DdType DdType, typename ValueType>

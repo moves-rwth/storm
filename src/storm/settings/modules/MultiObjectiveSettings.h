@@ -2,7 +2,7 @@
 
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
 #include "storm/settings/modules/ModuleSettings.h"
-#include "storm/storage/SchedulerClass.h"
+#include "storm/storage/scheduler/SchedulerClass.h"
 
 namespace storm {
 namespace settings {

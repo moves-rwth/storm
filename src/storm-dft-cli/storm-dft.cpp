@@ -41,7 +41,7 @@ storm::dft::DftEnvironment createDftEnvironmentFromSettings() {
     // Analysis environment
     auto& analysis = dftEnv.analysis();
     analysis.setUseModularisation(ftSettings.useModularisation());
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
     analysis.setSolveWithSMT(ftSettings.solveWithSMT());
 #else
     analysis.setSolveWithSMT(false);
@@ -165,7 +165,7 @@ void processOptions() {
 
     bool useSMT = false;
     uint64_t solverTimeout = 10;
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
     if (dftEnv.analysis().isSolveWithSMT()) {
         useSMT = true;
         STORM_LOG_DEBUG("Use SMT for preprocessing");
@@ -183,7 +183,7 @@ void processOptions() {
     auto bounds = storm::dft::api::computeBEFailureBounds(*dft, useSMT, solverTimeout);
     STORM_LOG_DEBUG("BE failure bounds: lower bound: " << bounds.first << ", upper bound: " << bounds.second << ".");
 
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
     if (useSMT) {
         // Solve with SMT
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT.");
