@@ -18,6 +18,7 @@
 #include "storm/api/storm.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/BooleanLiteralFormula.h"
 #include "storm/logic/BoundedUntilFormula.h"
@@ -27,7 +28,6 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/ExtendedNumber.h"
 

@@ -65,6 +65,34 @@ storm::ExtendedRationalNumber getQuantitativeResultAtInitialState(std::shared_pt
     return result->asQuantitativeCheckResult<storm::RationalNumber>().getMin();
 }
 
+void expectSolutionBoundsSound(std::unique_ptr<storm::modelchecker::CheckResult> const& result, double expected) {
+    auto const& explicitResult = result->asExplicitQuantitativeCheckResult<double>();
+    ASSERT_TRUE(explicitResult.hasLowerBounds() || explicitResult.hasUpperBounds()) << "No bound on the solution was reported.";
+    if (explicitResult.hasLowerBounds()) {
+        EXPECT_LE(explicitResult.getLowerBoundVector().front(), expected + 0.0001) << "The lower bound exceeds the expected value.";
+    }
+    if (explicitResult.hasUpperBounds()) {
+        EXPECT_LE(expected, explicitResult.getUpperBoundVector().front() + 0.0001) << "The upper bound falls below the expected value.";
+    }
+}
+
+void expectSolutionBoundsSound(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::RationalNumber const& expected) {
+    auto const& explicitResult = result->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
+    ASSERT_TRUE(explicitResult.hasLowerBounds() || explicitResult.hasUpperBounds()) << "No bound on the solution was reported.";
+    if (explicitResult.hasLowerBounds()) {
+        EXPECT_LE(explicitResult.getLowerBoundVector().front(), expected) << "The lower bound exceeds the expected value.";
+    }
+    if (explicitResult.hasUpperBounds()) {
+        EXPECT_LE(expected, explicitResult.getUpperBoundVector().front()) << "The upper bound falls below the expected value.";
+    }
+}
+
+template<typename ValueType>
+void expectBoundsEncloseValues(std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
+    auto const& explicitResult = result->asExplicitQuantitativeCheckResult<ValueType>();
+    EXPECT_TRUE(explicitResult.getSolutionBounds().encloses(explicitResult.getValueVector())) << "The bounds do not enclose the values of all states.";
+}
+
 void expectThrow(std::string const& path, std::string const& formulaString) {
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::Interval>(path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
@@ -85,6 +113,7 @@ void checkModel(std::string const& path, std::string const& formulaString, doubl
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     storm::Environment env;
     env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    env.solver().setForceSoundness(true);
 
     std::shared_ptr<storm::models::sparse::Mdp<storm::Interval>> mdp = modelPtr->as<storm::models::sparse::Mdp<storm::Interval>>();
     ASSERT_EQ(storm::models::ModelType::Mdp, modelPtr->getType());
@@ -94,20 +123,28 @@ void checkModel(std::string const& path, std::string const& formulaString, doubl
 
     auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*mdp);
     auto resultMax = checker.check(env, taskMax);
+    expectBoundsEncloseValues<double>(resultMax);
     EXPECT_NEAR(maxmin, getQuantitativeResultAtInitialState(mdp, resultMax), 0.0001);
+    expectSolutionBoundsSound(resultMax, maxmin);
     taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMaxNonRobust = checker.check(env, taskMax);
+    expectBoundsEncloseValues<double>(resultMaxNonRobust);
     EXPECT_NEAR(maxmax, getQuantitativeResultAtInitialState(mdp, resultMaxNonRobust), 0.0001);
+    expectSolutionBoundsSound(resultMaxNonRobust, maxmax);
 
     auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
     taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
     taskMin.setProduceSchedulers(produceScheduler);
 
     auto resultMin = checker.check(env, taskMin);
+    expectBoundsEncloseValues<double>(resultMin);
     EXPECT_NEAR(minmax, getQuantitativeResultAtInitialState(mdp, resultMin), 0.0001);
+    expectSolutionBoundsSound(resultMin, minmax);
     taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMinNonRobust = checker.check(env, taskMin);
+    expectBoundsEncloseValues<double>(resultMinNonRobust);
     EXPECT_NEAR(minmin, getQuantitativeResultAtInitialState(mdp, resultMinNonRobust), 0.0001);
+    expectSolutionBoundsSound(resultMinNonRobust, minmin);
 }
 
 void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double minmin, double minmax, double maxmin, double maxmax,
@@ -157,6 +194,7 @@ void checkModelRational(std::string const& path, std::string const& formulaStrin
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     storm::Environment env;
     env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    env.solver().setForceSoundness(true);
 
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalInterval>> mdp = modelPtr->as<storm::models::sparse::Mdp<storm::RationalInterval>>();
     ASSERT_EQ(storm::models::ModelType::Mdp, modelPtr->getType());
@@ -166,25 +204,32 @@ void checkModelRational(std::string const& path, std::string const& formulaStrin
     auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>(*mdp);
     taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
     auto resultMax = checker.check(env, taskMax);
+    expectBoundsEncloseValues<storm::RationalNumber>(resultMax);
     EXPECT_EQ(maxmin, getQuantitativeResultAtInitialState(mdp, resultMax));
+    expectSolutionBoundsSound(resultMax, maxmin);
     taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMaxNonRobust = checker.check(env, taskMax);
+    expectBoundsEncloseValues<storm::RationalNumber>(resultMaxNonRobust);
     EXPECT_EQ(maxmax, getQuantitativeResultAtInitialState(mdp, resultMaxNonRobust));
+    expectSolutionBoundsSound(resultMaxNonRobust, maxmax);
 
     auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[1]);
     taskMin.setProduceSchedulers(produceScheduler);
 
     taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
     auto resultMin = checker.check(env, taskMin);
+    expectBoundsEncloseValues<storm::RationalNumber>(resultMin);
     EXPECT_EQ(minmax, getQuantitativeResultAtInitialState(mdp, resultMin));
+    expectSolutionBoundsSound(resultMin, minmax);
     taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMinNonRobust = checker.check(env, taskMin);
+    expectBoundsEncloseValues<storm::RationalNumber>(resultMinNonRobust);
     EXPECT_EQ(minmin, getQuantitativeResultAtInitialState(mdp, resultMinNonRobust));
 }
 
 TEST(RobustMdpModelCheckerTest, RobotMinMaxTest) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     // Maxima reachability rewards using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism",
@@ -316,6 +361,12 @@ TEST(RobustMDPModelCheckingTest, RewardsTargetStateBeforeMaybeStates) {
     // Same as above, but the target state has a smaller index than the other state. The values of target states must not be mixed up with the values of
     // the remaining states.
     checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-11.drn", "Rmax=? [ F \"target\" ];Rmin=? [ F \"target\" ]", 1.25, 2, 2, 1.25, false);
+}
+
+TEST(RobustMDPModelCheckingTest, RewardsTargetStateBeforeSeveralMaybeStates) {
+    // The bounds of the maybe states must not be mixed up, otherwise state 2 would get the larger bound of state 1.
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-14.drn", "Rmax=? [ F \"target\" ];Rmin=? [ F \"target\" ]", 2.25, 3, 3, 2.25, false);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-14.drn", "Tmax=? [ F \"target\" ];Tmin=? [ F \"target\" ]", 2.25, 3, 3, 2.25, false);
 }
 
 TEST(RobustMDPModelCheckingTest, ReachabilityTimes) {
@@ -456,16 +507,16 @@ TEST(RobustRationalMDPModelCheckingTest, Tiny05maxmin) {
 }
 
 TEST(RobustMDPModelCheckingTest, AddUncertaintyCoin22max) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.1);
     makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.2);
 }
 
 TEST(RobustRationalMDPModelCheckingTest, AddUncertaintyCoin22max) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", storm::RationalNumber("1/10"));
     makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", storm::RationalNumber("1/5"));

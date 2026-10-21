@@ -6,10 +6,10 @@
 #ifdef STORM_HAVE_Z3
 #include "storm/adapters/Z3ExpressionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/OperatorType.h"
+#include "storm/expressions/SimpleValuation.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/OperatorType.h"
-#include "storm/storage/expressions/SimpleValuation.h"
 
 TEST(Z3ExpressionAdapter, StormToZ3Basic) {
     z3::context ctx;

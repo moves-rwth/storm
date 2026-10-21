@@ -40,8 +40,8 @@
 
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 
 #include "storm/io/file.h"
 #include "storm/utility/Engine.h"
