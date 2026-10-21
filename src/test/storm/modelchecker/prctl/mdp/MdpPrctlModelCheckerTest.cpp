@@ -899,6 +899,33 @@ TYPED_TEST(MdpPrctlModelCheckerTest, TinyRewards) {
     });
 }
 
+TYPED_TEST(MdpPrctlModelCheckerTest, SimpleProtocolMaybeStateEndComponent) {
+    // State 1 has a self-loop, so the maybe states contain an end component and the fixed point is not unique.
+    std::string formulasString = "Pmax=? [ (s<=1) U (s=3) ]";
+    formulasString += "; Pmax=? [ !(s=3) U (!(s<=1) & !(s=3)) ]";
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/simple_protocol.nm", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    this->execute(model, [&]() {
+        EXPECT_EQ(4ul, model->getNumberOfStates());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // Rational search on DDs requires a unique solution and cannot eliminate end components (yet).
+        if (TypeParam::engine == MdpEngine::PrismDd && this->env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch) {
+            STORM_SILENT_EXPECT_THROW(checker->check(this->env(), tasks[0]), storm::exceptions::UncheckedRequirementException);
+            STORM_SILENT_EXPECT_THROW(checker->check(this->env(), tasks[1]), storm::exceptions::UncheckedRequirementException);
+        } else {
+            result = checker->check(this->env(), tasks[0]);
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("99/100"));
+
+            result = checker->check(this->env(), tasks[1]);
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/100"));
+        }
+    });
+}
+
 TYPED_TEST(MdpPrctlModelCheckerTest, Team) {
     std::string formulasString = "R{\"w_1_total\"}max=? [ C ]";
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/multiobj_team3.nm", formulasString);
