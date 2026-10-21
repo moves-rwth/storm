@@ -825,8 +825,13 @@ TYPED_TEST(MdpPrctlModelCheckerTest, MaybeStateEndComponent) {
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
 
     auto checker = this->createModelChecker(model);
-    auto result = checker->check(this->env(), tasks[0]);
-    this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+    // Rational search on DDs requires a unique solution and cannot eliminate end components (yet).
+    if (TypeParam::engine == MdpEngine::PrismDd && this->env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch) {
+        STORM_SILENT_EXPECT_THROW(checker->check(this->env(), tasks[0]), storm::exceptions::UncheckedRequirementException);
+    } else {
+        auto result = checker->check(this->env(), tasks[0]);
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+    }
 }
 
 STORM_EXPENSIVE_TYPED_TEST(MdpPrctlModelCheckerTest, consensus) {
