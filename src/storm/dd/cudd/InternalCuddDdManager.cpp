@@ -8,8 +8,7 @@ namespace storm {
 namespace dd {
 
 #ifdef STORM_HAVE_CUDD
-InternalDdManager<DdType::CUDD>::InternalDdManager(storm::CuddDdManagerEnvironment const& environment)
-    : cuddManager(), numberOfDdVariables(0) {
+InternalDdManager<DdType::CUDD>::InternalDdManager(storm::CuddDdManagerEnvironment const& environment) : cuddManager(), numberOfDdVariables(0) {
     this->cuddManager.SetMaxMemory(static_cast<unsigned long>(environment.getMaximalMemory() * 1024ul * 1024ul));
     this->cuddManager.SetEpsilon(environment.getConstantPrecision());
 
