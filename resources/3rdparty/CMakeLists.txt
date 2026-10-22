@@ -6,6 +6,37 @@ add_custom_target(test-resources)
 
 include(FetchContent)
 
+# Applies the given patch to the given source directory unless it was already applied.
+function(storm_apply_patch name source_dir patch_file)
+    set(patch_args -p1 -s -F0 -i ${patch_file})
+    # The patch was already applied if it can be reversed
+    execute_process(
+            COMMAND patch -R --dry-run -f ${patch_args}
+            WORKING_DIRECTORY ${source_dir}
+            RESULT_VARIABLE reverse_result
+            OUTPUT_QUIET ERROR_QUIET
+    )
+    if(reverse_result EQUAL 0)
+        return()
+    endif()
+    # Dry run first to avoid leaving the sources partially patched
+    execute_process(
+            COMMAND patch --dry-run -N -f ${patch_args}
+            WORKING_DIRECTORY ${source_dir}
+            RESULT_VARIABLE patch_result
+    )
+    if(patch_result EQUAL 0)
+        execute_process(
+                COMMAND patch -N -f ${patch_args}
+                WORKING_DIRECTORY ${source_dir}
+                RESULT_VARIABLE patch_result
+        )
+    endif()
+    if(NOT patch_result EQUAL 0)
+        message(FATAL_ERROR "Storm - Failed to apply ${patch_file} to ${name} sources in ${source_dir}.")
+    endif()
+endfunction()
+
 message(STATUS "Storm - Building external resources with ${STORM_RESOURCES_BUILD_JOBCOUNT} job(s) in parallel.")
 
 #############################################################
@@ -83,11 +114,10 @@ if(NOT STORM_DISABLE_GMM)
     FetchContent_Declare(
             gmm
             URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-${GMM_VERSION}.tar.gz
-            # Try to apply patch and otherwise check that patch was already applied
-            # Needed because while -N ignores already applied patches it still returns with exit code 1
-            PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch | grep "Reversed (or previously applied) patch detected!"
     )
     FetchContent_MakeAvailable(gmm)
+    # Apply patch on downloaded/existing sources
+    storm_apply_patch(gmm ${gmm_SOURCE_DIR} ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch)
     add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
     add_dependencies(storm_resources gmm)
     target_include_directories(gmm INTERFACE
@@ -122,13 +152,13 @@ FetchContent_Declare(
         # Pointing SOURCE_SUBDIR at a subdirectory with no CMakeLists.txt makes FetchContent_MakeAvailable() populate
         # the source without calling add_subdirectory() on it.
         SOURCE_SUBDIR do-not-add-as-subdirectory
-        # First check whether patch was already applied (--reverse --check), otherwise apply patch
-        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch --reverse --check -q || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch
 )
 FetchContent_MakeAvailable(eigen)
 # The include path exposes the parent of the checkout, whose directory is named "StormEigen".
 # This allows to #include <StormEigen/Eigen/Dense> and avoids name clashes with system-installed Eigen.
 cmake_path(GET eigen_SOURCE_DIR PARENT_PATH STORM_EIGEN_PARENT_DIR)
+# Apply patch on downloaded/existing sources
+storm_apply_patch(Eigen ${eigen_SOURCE_DIR} ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch)
 add_library(eigenstorm INTERFACE) # Not imported, we are in control of the sources.
 if(STORM_WARNING_AS_ERROR AND STORM_COMPILER_GCC)
         # Ignore warning in Eigen
