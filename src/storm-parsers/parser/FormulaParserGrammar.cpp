@@ -3,7 +3,7 @@
 #include <memory>
 #include <optional>
 
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace parser {

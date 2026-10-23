@@ -5,8 +5,8 @@
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Expressions.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Expressions.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -161,6 +161,7 @@ storm::expressions::Expression Z3ExpressionAdapter::translateExpression(z3::expr
                         return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
                     }
                 }
+                break;
             case Z3_OP_AGNUM:
                 STORM_LOG_WARN("Interpreting algebraic numbers as rational numbers. This is not an exact computation.");
                 // Get the value of an algebraic number, converted to a rational, with precision 1/10^16.
