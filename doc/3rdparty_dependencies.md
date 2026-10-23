@@ -68,6 +68,7 @@ In Eigen, we have adapted `SparseLU` to work with scalar types that do not defau
 
 To update the Eigen version, just change the corresponding commit hash in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
 Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/eigen501.patch` can be applied without issues (in particular check for changes in `Eigen/src/SparseLU/`).
+The patch is applied during CMake configuration; it is skipped if it was already applied.
 
 Eigen is fetched from the GitHub mirror `https://github.com/eigen-mirror/eigen.git` rather than from the upstream GitLab repository, because the mirror is more reliably available (in particular in CI).
 The mirror contains the same commits, so the pinned commit hash is identical for both.
@@ -92,6 +93,7 @@ To update ExprTk, download the latest version from the [website](https://www.par
 ### GMM
 To update GMM, change the corresponding version in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
 Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/gmm55.patch` still applies to the new version; update or rename it (and adjust the patch path in the CMake file) if it does not.
+The patch is applied during CMake configuration; it is skipped if it was already applied.
 
 ### googletest / gtest
 To update gtest, bump the `GTEST_VERSION` number.
